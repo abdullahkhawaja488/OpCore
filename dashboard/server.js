@@ -1,0 +1,192 @@
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+const express      = require('express');
+const session      = require('express-session');
+const axios        = require('axios');
+const path         = require('path');
+const fs           = require('fs');
+const { execSync } = require('child_process');
+
+const app  = express();
+const PORT = process.env.DASHBOARD_PORT || 4000;
+
+const OWNER_ID       = process.env.ABDULLAH;
+const CLIENT_ID      = process.env.CLIENT_ID;
+const CLIENT_SECRET  = process.env.DISCORD_CLIENT_SECRET;
+const REDIRECT_URI   = process.env.DASHBOARD_REDIRECT_URI || `http://localhost:${PORT}/auth/callback`;
+const SERVERS_PATH   = path.join(__dirname, '../data/servers.json');
+const LOG_PATH       = path.join(__dirname, '../data/dashboard.log');
+
+// ── In-memory log ring buffer (last 200 lines) ────────────────────────────────
+const logs = [];
+function pushLog(level, msg) {
+    const entry = { time: new Date().toISOString(), level, msg };
+    logs.push(entry);
+    if (logs.length > 200) logs.shift();
+    fs.appendFileSync(LOG_PATH, JSON.stringify(entry) + '\n');
+}
+
+// Intercept console for log capture
+const _log   = console.log.bind(console);
+const _error = console.error.bind(console);
+console.log   = (...a) => { _log(...a);   pushLog('info',  a.join(' ')); };
+console.error = (...a) => { _error(...a); pushLog('error', a.join(' ')); };
+
+// ── Middleware ────────────────────────────────────────────────────────────────
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+    secret:            process.env.SESSION_SECRET,
+    resave:            false,
+    saveUninitialized: false,
+    cookie:            { secure: false, maxAge: 24 * 60 * 60 * 1000 },
+}));
+
+// ── Auth guard ────────────────────────────────────────────────────────────────
+function requireAuth(req, res, next) {
+    if (req.session?.user?.id === OWNER_ID) return next();
+    res.status(401).json({ error: 'Unauthorized' });
+}
+
+// ── Discord OAuth ─────────────────────────────────────────────────────────────
+app.get('/auth/login', (req, res) => {
+    const params = new URLSearchParams({
+        client_id:     CLIENT_ID,
+        redirect_uri:  REDIRECT_URI,
+        response_type: 'code',
+        scope:         'identify',
+    });
+    res.redirect(`https://discord.com/oauth2/authorize?${params}`);
+});
+
+app.get('/auth/callback', async (req, res) => {
+    const { code } = req.query;
+    if (!code) return res.redirect('/login.html?error=no_code');
+
+    try {
+        const tokenRes = await axios.post('https://discord.com/api/oauth2/token',
+            new URLSearchParams({
+                client_id:     CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                grant_type:    'authorization_code',
+                code,
+                redirect_uri:  REDIRECT_URI,
+            }),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+
+        const userRes = await axios.get('https://discord.com/api/users/@me', {
+            headers: { Authorization: `Bearer ${tokenRes.data.access_token}` },
+        });
+
+        const user = userRes.data;
+
+        if (user.id !== OWNER_ID) {
+            return res.redirect('/login.html?error=unauthorized');
+        }
+
+        req.session.user = { id: user.id, username: user.username, avatar: user.avatar };
+        res.redirect('/');
+    } catch (err) {
+        console.error('[DASHBOARD] OAuth error:', err.message);
+        res.redirect('/login.html?error=oauth_failed');
+    }
+});
+
+app.get('/auth/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/login.html');
+});
+
+app.get('/auth/me', (req, res) => {
+    if (req.session?.user?.id === OWNER_ID) {
+        res.json(req.session.user);
+    } else {
+        res.status(401).json({ error: 'Not logged in' });
+    }
+});
+
+// ── API: Servers ──────────────────────────────────────────────────────────────
+app.get('/api/servers', requireAuth, (req, res) => {
+    try {
+        const raw  = fs.readFileSync(SERVERS_PATH, 'utf-8').trim();
+        const data = raw ? JSON.parse(raw) : {};
+        res.json(data);
+    } catch {
+        res.json({});
+    }
+});
+
+app.post('/api/servers/:guildId', requireAuth, (req, res) => {
+    try {
+        const raw    = fs.readFileSync(SERVERS_PATH, 'utf-8').trim();
+        const data   = raw ? JSON.parse(raw) : {};
+        const { guildId } = req.params;
+
+        if (!data[guildId]) return res.status(404).json({ error: 'Guild not found' });
+
+        // Only allow updating safe fields
+        const allowed = ['WELCOME_CHANNEL', 'BYE_CHANNEL', 'MEMBER_COUNT_CHANNEL_ID', 'RULES_CHANNEL', 'DEFAULT_ROLE_ID', 'NOTIFY_CHANNEL'];
+        for (const key of allowed) {
+            if (req.body[key] !== undefined) {
+                data[guildId][key] = req.body[key];
+            }
+        }
+
+        data[guildId].updatedAt = new Date().toISOString();
+        fs.writeFileSync(SERVERS_PATH, JSON.stringify(data, null, 2));
+        console.log(`[DASHBOARD] Updated config for guild ${guildId}`);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── API: Logs ─────────────────────────────────────────────────────────────────
+app.get('/api/logs', requireAuth, (req, res) => {
+    res.json(logs);
+});
+
+// SSE stream for live logs
+app.get('/api/logs/stream', requireAuth, (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    // Send existing logs first
+    res.write(`data: ${JSON.stringify({ type: 'init', logs })}\n\n`);
+
+    // Poll for new logs every second
+    let lastLen = logs.length;
+    const interval = setInterval(() => {
+        if (logs.length > lastLen) {
+            const newLogs = logs.slice(lastLen);
+            lastLen = logs.length;
+            res.write(`data: ${JSON.stringify({ type: 'new', logs: newLogs })}\n\n`);
+        }
+    }, 1000);
+
+    req.on('close', () => clearInterval(interval));
+});
+
+// ── API: Trigger YT check ─────────────────────────────────────────────────────
+app.post('/api/yt/check', requireAuth, async (req, res) => {
+    console.log('[DASHBOARD] Manual YT check triggered by Abdullah');
+    // Signal the YT notifier by touching a trigger file
+    const triggerPath = path.join(__dirname, '../data/yt_trigger');
+    fs.writeFileSync(triggerPath, Date.now().toString());
+    res.json({ ok: true, message: 'YT check triggered' });
+});
+
+// ── Catch-all: serve dashboard or login ──────────────────────────────────────
+app.get('/', (req, res) => {
+    if (req.session?.user?.id === OWNER_ID) {
+        res.sendFile(path.join(__dirname, 'public/index.html'));
+    } else {
+        res.redirect('/login.html');
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`[DASHBOARD] Running at http://localhost:${PORT}`);
+});

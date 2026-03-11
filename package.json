@@ -1,0 +1,18 @@
+{
+  "name": "opcore",
+  "version": "2.0.0",
+  "description": "OpCore Discord Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Abdullah",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "discord.js": "^14.25.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
+"express-session": "^1.18.0"
+  }
+}

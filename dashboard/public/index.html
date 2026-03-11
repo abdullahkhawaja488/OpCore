@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Op Core — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0a0a0f;
+    --surface:  #111118;
+    --surface2: #16161f;
+    --border:   #1e1e2e;
+    --accent:   #5865f2;
+    --accent2:  #7289da;
+    --green:    #23d18b;
+    --red:      #ed4245;
+    --yellow:   #faa61a;
+    --text:     #e2e2f0;
+    --muted:    #5a5a7a;
+    --mono:     'Space Mono', monospace;
+    --display:  'Syne', sans-serif;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .logo span { color: var(--accent); }
+
+  .badge {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    padding: 3px 8px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .user-info img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+  }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--text); }
+
+  .btn-accent {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-accent:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-green  { border-color: var(--green); color: var(--green); }
+  .btn-green:hover { background: var(--green); color: #000; }
+
+  /* ── Layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    padding: 24px 0;
+  }
+
+  .sidebar-section {
+    padding: 0 20px;
+    margin-bottom: 32px;
+  }
+
+  .sidebar-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .server-item {
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .server-item:hover  { border-color: var(--border); background: var(--surface2); }
+  .server-item.active { border-color: var(--accent); background: rgba(88,101,242,0.08); }
+
+  .server-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+
+  .server-name {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: color 0.15s;
+    font-size: 12px;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover  { color: var(--text); border-color: var(--border); }
+  .nav-item.active { color: var(--text); border-color: var(--accent); background: rgba(88,101,242,0.08); }
+
+  /* ── Main ── */
+  .main {
+    overflow-y: auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ── Panel ── */
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* ── Stats row ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .stat {
+    background: var(--surface);
+    padding: 20px 24px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: var(--display);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green  { color: var(--green); }
+
+  /* ── Config form ── */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+
+  .field label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .field input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus { border-color: var(--accent); }
+
+  .field input::placeholder { color: var(--muted); }
+
+  /* ── Logs ── */
+  .log-container {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    height: 340px;
+    overflow-y: auto;
+    padding: 16px;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .log-entry { display: flex; gap: 12px; align-items: flex-start; }
+
+  .log-time  { color: var(--muted); flex-shrink: 0; font-size: 10px; }
+  .log-level { flex-shrink: 0; width: 40px; }
+  .log-level.info  { color: var(--green); }
+  .log-level.error { color: var(--red); }
+  .log-msg { color: var(--text); word-break: break-all; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--green);
+    color: var(--green);
+    padding: 12px 20px;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.25s;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  /* ── Hidden ── */
+  .view { display: none; }
+  .view.active { display: contents; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .save-row { display: flex; justify-content: flex-end; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">OP<span>CORE</span></div>
+    <div class="badge">Dashboard</div>
+  </div>
+  <div class="topbar-right">
+    <div class="user-info">
+      <img id="avatar" src="" alt=""/>
+      <span id="username">...</span>
+    </div>
+    <a class="btn" href="/auth/logout">Logout</a>
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <div class="nav-item active" data-view="overview">
+        <span>◈</span> Overview
+      </div>
+      <div class="nav-item" data-view="logs">
+        <span>◉</span> Live Logs
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Servers</div>
+      <div id="server-list"></div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main" id="main-content">
+
+    <!-- Overview -->
+    <div class="view active" id="view-overview">
+      <div class="stats-row" id="stats-row">
+        <div class="stat">
+          <div class="stat-label">Servers</div>
+          <div class="stat-value accent" id="stat-servers">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Status</div>
+          <div class="stat-value green">Online</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Log Entries</div>
+          <div class="stat-value" id="stat-logs">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">YouTube</div>
+          <div class="stat-value green">Active</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">YouTube Notifier</div>
+          <button class="btn btn-green" id="yt-trigger-btn">▶ Trigger Check Now</button>
+        </div>
+        <div class="panel-body" style="color: var(--muted); font-size: 12px; line-height: 2;">
+          Polls every <strong style="color:var(--text)">1 hour</strong> automatically.<br>
+          Use the button to force an immediate check.<br>
+          Results are posted to each server's configured notify channel.
+        </div>
+      </div>
+    </div>
+
+    <!-- Logs view -->
+    <div class="view" id="view-logs">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Live Logs</div>
+          <button class="btn" id="clear-logs-btn">Clear</button>
+        </div>
+        <div class="panel-body" style="padding: 0;">
+          <div class="log-container" id="log-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Server config view (injected dynamically) -->
+    <div class="view" id="view-server">
+      <div class="panel" id="server-config-panel">
+        <div class="panel-header">
+          <div class="panel-title" id="server-config-title">Server Config</div>
+        </div>
+        <div class="panel-body">
+          <div class="config-grid" id="config-fields"></div>
+          <div class="save-row">
+            <button class="btn btn-accent" id="save-config-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let servers    = {};
+let activeGuild = null;
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function init() {
+  const me = await fetch('/auth/me').then(r => r.json()).catch(() => null);
+  if (!me || me.error) { location.href = '/login.html'; return; }
+
+  document.getElementById('username').textContent = me.username;
+  if (me.avatar) {
+    document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64`;
+  }
+
+  await loadServers();
+  startLogStream();
+}
+
+// ── Servers ────────────────────────────────────────────────────────────────
+async function loadServers() {
+  servers = await fetch('/api/servers').then(r => r.json()).catch(() => ({}));
+  const list = document.getElementById('server-list');
+  list.innerHTML = '';
+
+  const ids = Object.keys(servers);
+  document.getElementById('stat-servers').textContent = ids.length;
+
+  ids.forEach(guildId => {
+    const conf = servers[guildId];
+    const el   = document.createElement('div');
+    el.className  = 'server-item';
+    el.dataset.id = guildId;
+    el.innerHTML  = `<div class="server-dot"></div><div class="server-name">${conf.serverName || guildId}</div>`;
+    el.onclick    = () => openServer(guildId);
+    list.appendChild(el);
+  });
+}
+
+function openServer(guildId) {
+  activeGuild = guildId;
+  setView('server');
+
+  document.querySelectorAll('.server-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === guildId);
+  });
+
+  const conf   = servers[guildId];
+  const title  = document.getElementById('server-config-title');
+  const fields = document.getElementById('config-fields');
+
+  title.textContent = conf.serverName || guildId;
+
+  const editable = [
+    { key: 'WELCOME_CHANNEL',         label: 'Welcome Channel ID' },
+    { key: 'BYE_CHANNEL',             label: 'Goodbye Channel ID' },
+    { key: 'MEMBER_COUNT_CHANNEL_ID', label: 'Member Count Channel ID' },
+    { key: 'RULES_CHANNEL',           label: 'Rules Channel ID' },
+    { key: 'DEFAULT_ROLE_ID',         label: 'Default Role ID' },
+    { key: 'NOTIFY_CHANNEL',          label: 'YouTube Notify Channel ID' },
+  ];
+
+  fields.innerHTML = editable.map(f => `
+    <div class="field">
+      <label>${f.label}</label>
+      <input type="text" data-key="${f.key}" value="${conf[f.key] || ''}" placeholder="Channel / Role ID"/>
+    </div>
+  `).join('');
+}
+
+document.getElementById('save-config-btn').onclick = async () => {
+  if (!activeGuild) return;
+  const body = {};
+  document.querySelectorAll('#config-fields input').forEach(inp => {
+    body[inp.dataset.key] = inp.value.trim();
+  });
+  const res = await fetch(`/api/servers/${activeGuild}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (res.ok) {
+    toast('Config saved ✓');
+    servers[activeGuild] = { ...servers[activeGuild], ...body };
+  } else {
+    toast('Save failed', true);
+  }
+};
+
+// ── YT Trigger ────────────────────────────────────────────────────────────
+document.getElementById('yt-trigger-btn').onclick = async () => {
+  const btn = document.getElementById('yt-trigger-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Triggering...';
+  const res = await fetch('/api/yt/check', { method: 'POST' });
+  if (res.ok) {
+    toast('YT check triggered ✓');
+  } else {
+    toast('Failed to trigger', true);
+  }
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = '▶ Trigger Check Now';
+  }, 3000);
+};
+
+// ── Logs ───────────────────────────────────────────────────────────────────
+function renderLog(entry) {
+  const container = document.getElementById('log-container');
+  const el        = document.createElement('div');
+  el.className    = 'log-entry';
+  const t         = new Date(entry.time).toLocaleTimeString();
+  el.innerHTML    = `
+    <span class="log-time">${t}</span>
+    <span class="log-level ${entry.level}">${entry.level.toUpperCase()}</span>
+    <span class="log-msg">${escHtml(entry.msg)}</span>
+  `;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+  document.getElementById('stat-logs').textContent = container.children.length;
+}
+
+function startLogStream() {
+  const es = new EventSource('/api/logs/stream');
+  es.onmessage = e => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'init') {
+      document.getElementById('log-container').innerHTML = '';
+      data.logs.forEach(renderLog);
+    } else if (data.type === 'new') {
+      data.logs.forEach(renderLog);
+    }
+  };
+}
+
+document.getElementById('clear-logs-btn').onclick = () => {
+  document.getElementById('log-container').innerHTML = '';
+};
+
+// ── View switching ─────────────────────────────────────────────────────────
+function setView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${name}`)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.view === name);
+  });
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.onclick = () => {
+    setView(item.dataset.view);
+    document.querySelectorAll('.server-item').forEach(s => s.classList.remove('active'));
+  };
+});
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+init();
+</script>
+</body>
+</html>
