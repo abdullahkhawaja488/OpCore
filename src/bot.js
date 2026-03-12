@@ -18,6 +18,21 @@ const client = new Client({
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
+// ── Member count update on startup + every 10 mins ────────────────────────
+async function updateAllMemberCounts() {
+    const config = readConfig();
+    for (const [guildId, conf] of Object.entries(config)) {
+        if (!conf.MEMBER_COUNT_CHANNEL_ID) continue;
+        const guild = client.guilds.cache.get(guildId);
+        if (!guild) continue;
+        const channel = guild.channels.cache.get(conf.MEMBER_COUNT_CHANNEL_ID);
+        if (!channel) continue;
+        await channel.setName(`Members: ${guild.memberCount}`).catch(err =>
+            console.error(`[BOT] Member count update failed for ${guild.name}:`, err.message)
+        );
+    }
+}
+
 
 // ── Register slash commands on ready ─────────────────────────────────────────
 client.once('clientReady', async () => {
@@ -38,6 +53,7 @@ client.once('clientReady', async () => {
             console.error(`[BOT] Failed for ${guild.name}:`, err.message);
         }
     }
+    updateAllMemberCounts();
 });
 
 // Register commands when the bot joins a new server
@@ -53,6 +69,7 @@ client.on('guildCreate', async (guild) => {
     } catch (err) {
         console.error(`[BOT] Failed to register for ${guild.name}:`, err.message);
     }
+    
 });
 
 // ── Events ────────────────────────────────────────────────────────────────────
