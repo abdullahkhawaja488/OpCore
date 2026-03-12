@@ -1,3 +1,4 @@
+const { readConfig } = require('./services/config');
 require('dotenv').config();
 const {
     Client, GatewayIntentBits, Partials,
