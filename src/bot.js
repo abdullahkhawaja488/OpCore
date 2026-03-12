@@ -1,4 +1,3 @@
-const { readConfig } = require('./services/config');
 require('dotenv').config();
 const {
     Client, GatewayIntentBits, Partials,
@@ -9,6 +8,7 @@ const { handleInteraction } = require('./commands/handler');
 const { handleMemberAdd }    = require('./events/guildMemberAdd');
 const { handleMemberRemove } = require('./events/guildMemberRemove');
 const { getAllCommands }      = require('./commands/registry');
+const { readConfig } = require('./services/config');
 
 const client = new Client({
     intents: [
