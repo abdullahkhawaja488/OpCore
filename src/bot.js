@@ -8,7 +8,6 @@ const { handleInteraction } = require('./commands/handler');
 const { handleMemberAdd }    = require('./events/guildMemberAdd');
 const { handleMemberRemove } = require('./events/guildMemberRemove');
 const { getAllCommands }      = require('./commands/registry');
-const { readConfig } = require('./services/config');
 
 const client = new Client({
     intents: [
@@ -37,6 +36,7 @@ async function updateAllMemberCounts() {
 
 // ── Register slash commands on ready ─────────────────────────────────────────
 client.once('clientReady', async () => {
+
     console.log(`[BOT] Logged in as ${client.user.tag}`);
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -54,7 +54,6 @@ client.once('clientReady', async () => {
             console.error(`[BOT] Failed for ${guild.name}:`, err.message);
         }
     }
-    updateAllMemberCounts();
 });
 
 // Register commands when the bot joins a new server
