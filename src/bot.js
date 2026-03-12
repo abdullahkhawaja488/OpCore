@@ -26,18 +26,32 @@ client.once('clientReady', async () => {
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     const commands = getAllCommands();
 
-    try {
-        // Register to both guilds in servers.json
-        const guildIds = [process.env.CZPK, process.env.CHILLZONE].filter(Boolean);
-        for (const guildId of guildIds) {
+    // Register to every guild the bot is currently in
+    for (const guild of client.guilds.cache.values()) {
+        try {
             await rest.put(
-                Routes.applicationGuildCommands(process.env.CLIENT_ID, guildId),
+                Routes.applicationGuildCommands(process.env.CLIENT_ID, guild.id),
                 { body: commands }
             );
-            console.log(`[BOT] Slash commands registered for guild ${guildId}`);
+            console.log(`[BOT] Commands registered for ${guild.name}`);
+        } catch (err) {
+            console.error(`[BOT] Failed for ${guild.name}:`, err.message);
         }
+    }
+});
+
+// Register commands when the bot joins a new server
+client.on('guildCreate', async (guild) => {
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+    const commands = getAllCommands();
+    try {
+        await rest.put(
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, guild.id),
+            { body: commands }
+        );
+        console.log(`[BOT] Joined ${guild.name} — commands registered`);
     } catch (err) {
-        console.error('[BOT] Failed to register commands:', err);
+        console.error(`[BOT] Failed to register for ${guild.name}:`, err.message);
     }
 });
 
