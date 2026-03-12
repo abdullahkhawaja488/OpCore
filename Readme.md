@@ -1,6 +1,6 @@
 # OpCore 🤖
 
-A powerful, multi-server Discord bot built for **ChillZone** — featuring moderation, server management, YouTube notifications, and a private web dashboard.
+A powerful, multi-server Discord bot built for **The Eagnibals** — featuring moderation, server management, YouTube notifications, and a private web dashboard.
 
 ---
 
@@ -68,7 +68,7 @@ cp .env.example .env
 | `ABDULLAH` | Your Discord user ID (owner) |
 | `YOUTUBE_API_KEY` | Google Cloud YouTube Data API v3 key |
 | `CZPK` | Guild ID of your first server |
-| `CHILLZONE` | Guild ID of your second server |
+| `The Eagnibals` | Guild ID of your second server |
 | `DISCORD_CLIENT_SECRET` | OAuth2 client secret for the dashboard |
 | `DASHBOARD_REDIRECT_URI` | e.g. `http://localhost:4000/auth/callback` |
 | `SESSION_SECRET` | Any long random string |
