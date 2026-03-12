@@ -1,4 +1,4 @@
-# Op Core 🤖
+# OpCore 🤖
 
 A powerful, multi-server Discord bot built for **ChillZone** — featuring moderation, server management, YouTube notifications, and a private web dashboard.
 
