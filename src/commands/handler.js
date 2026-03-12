@@ -2,6 +2,8 @@ const moderation = require('./moderation');
 const info       = require('./info');
 const admin      = require('./admin');
 const general    = require('./general');
+const warningCmds = require('./warnings');
+const tickets     = require('./tickets');
 
 async function handleInteraction(client, interaction) {
     if (!interaction.guild) return;
@@ -9,6 +11,7 @@ async function handleInteraction(client, interaction) {
     // ── Button interactions ───────────────────────────────────────────────────
     if (interaction.isButton()) {
         const { customId } = interaction;
+        if (customId === 'ticket_close') return tickets.handleTicketClose(interaction);
         if (customId === 'premium') {
             const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
             const row = new ActionRowBuilder().addComponents(
@@ -44,6 +47,15 @@ async function handleInteraction(client, interaction) {
         role:      () => admin.role(interaction),
         setstatus: () => admin.setStatus(client, interaction),
         setup:     () => admin.setup(interaction),
+        warn:      () => warningCmds.warn(interaction),
+        warnings:  () => warningCmds.warnings(interaction),
+        clearwarn: () => warningCmds.clearwarn(interaction),
+        ticket:    () => {
+            const sub = interaction.options.getSubcommand();
+            if (sub === 'open')  return tickets.open(interaction);
+            if (sub === 'close') return tickets.close(interaction);
+            if (sub === 'add')   return tickets.add(interaction);
+        },
     };
 
     const handler = routes[commandName];

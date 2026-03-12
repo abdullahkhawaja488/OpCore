@@ -10,24 +10,40 @@ function loadConfig() {
 }
 const YT_CHANNEL_ID   = 'UCP7WmQ_U4GB3K51Od9QvM0w';
 const DISCORD_CHANNEL = '1391425953657258045';
+const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const POLL_INTERVAL   = 60 * 60 * 1000; // 1 hour
 const RECORD_FILE     = path.join(__dirname, '../../data/seen_videos.json');
 const MAX_SEEN        = 50;
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages
+    ]
+});
 
-function loadSeen() {
-    if (!fs.existsSync(RECORD_FILE)) return [];
-    const raw = fs.readFileSync(RECORD_FILE, 'utf-8').trim();
-    if (!raw) return [];
-    return JSON.parse(raw);
+async function loadSeen() {
+    const res = await axios.get(`${UPSTASH_URL}/get/seen_videos`, {
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
+    });
+    return res.data.result ? JSON.parse(res.data.result) : [];
 }
 
-function saveSeen(ids) {
-    // Keep only the last MAX_SEEN to prevent infinite growth
+async function saveSeen(ids) {
     const trimmed = ids.slice(-MAX_SEEN);
-    fs.writeFileSync(RECORD_FILE, JSON.stringify(trimmed, null, 2));
+   await axios.post(
+   `${UPSTASH_URL}/set/seen_videos`,
+   JSON.stringify(trimmed),
+   {
+      headers: {
+         Authorization: `Bearer ${UPSTASH_TOKEN}`,
+         'Content-Type': 'application/json'
+      }
+   }
+);
 }
+let isFirstRun = true;
 
 async function checkYouTube() {
     try {
@@ -45,15 +61,26 @@ async function checkYouTube() {
         const items = res.data.items;
         if (!items?.length) return;
 
-        const seen   = loadSeen();
+        const seen = await loadSeen();
         const config = loadConfig();
         let updated  = false;
 
         for (const item of items) {
             const videoId = item.id.videoId;
-            if (!videoId || seen.includes(videoId)) continue;
+            if (!videoId) continue;
 
-            // Post to every server that has a notify channel set
+            if (isFirstRun) {
+                // On startup: just mark everything as seen, post only the latest
+                if (!seen.includes(videoId)) {
+                    seen.push(videoId);
+                    updated = true;
+                }
+                continue;
+            }
+
+            if (seen.includes(videoId)) continue;
+
+            // New video found — post it
             for (const guildConf of Object.values(config)) {
                 if (!guildConf.NOTIFY_CHANNEL) continue;
                 const channel = await client.channels.fetch(guildConf.NOTIFY_CHANNEL).catch(() => null);
@@ -71,9 +98,11 @@ async function checkYouTube() {
             console.log(`[YT NOTIFIER] Posted: ${item.snippet.title}`);
         }
 
-        if (updated) saveSeen(seen);
+        if (updated) await saveSeen(seen);
+        isFirstRun = false;
+
     } catch (err) {
-        console.error('[YT NOTIFIER] Error:', err.message);
+        console.error('[YT NOTIFIER]', err.response?.data || err);
     }
 }
 

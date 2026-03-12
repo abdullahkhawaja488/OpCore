@@ -15,6 +15,8 @@ const CLIENT_SECRET  = process.env.DISCORD_CLIENT_SECRET;
 const REDIRECT_URI   = process.env.DASHBOARD_REDIRECT_URI || `http://localhost:${PORT}/auth/callback`;
 const SERVERS_PATH   = path.join(__dirname, '../data/servers.json');
 const LOG_PATH       = path.join(__dirname, '../data/dashboard.log');
+const AUDIT_PATH    = path.join(__dirname, '../data/audit.json');
+const WARNINGS_PATH = path.join(__dirname, '../data/warnings.json');
 
 // ── In-memory log ring buffer (last 200 lines) ────────────────────────────────
 const logs = [];
@@ -23,6 +25,12 @@ function pushLog(level, msg) {
     logs.push(entry);
     if (logs.length > 200) logs.shift();
     fs.appendFileSync(LOG_PATH, JSON.stringify(entry) + '\n');
+}
+function readJSON(p) {
+    if (!fs.existsSync(p)) return null;
+    const raw = fs.readFileSync(p, 'utf-8').trim();
+    if (!raw) return null;
+    return JSON.parse(raw);
 }
 
 // Intercept console for log capture
@@ -176,6 +184,44 @@ app.post('/api/yt/check', requireAuth, async (req, res) => {
     const triggerPath = path.join(__dirname, '../data/yt_trigger');
     fs.writeFileSync(triggerPath, Date.now().toString());
     res.json({ ok: true, message: 'YT check triggered' });
+});
+
+// ── API: Audit log ────────────────────────────────────────────────────────────
+app.get('/api/audit', requireAuth, (req, res) => {
+    const data = readJSON(AUDIT_PATH) || [];
+    const { guild, limit = 200 } = req.query;
+    const filtered = guild ? data.filter(e => e.guildId === guild) : data;
+    res.json(filtered.slice(0, parseInt(limit)));
+});
+
+// ── API: Warnings ─────────────────────────────────────────────────────────────
+app.get('/api/warnings', requireAuth, (req, res) => {
+    res.json(readJSON(WARNINGS_PATH) || {});
+});
+
+// ── API: Stats ────────────────────────────────────────────────────────────────
+app.get('/api/stats', requireAuth, (req, res) => {
+    const servers  = readJSON(SERVERS_PATH)  || {};
+    const audit    = readJSON(AUDIT_PATH)    || [];
+    const warnings = readJSON(WARNINGS_PATH) || {};
+    const totalWarnings = Object.values(warnings).reduce((a, g) =>
+        a + Object.values(g).reduce((b, u) => b + u.length, 0), 0);
+    res.json({
+        serverCount:   Object.keys(servers).length,
+        auditCount:    audit.length,
+        totalWarnings,
+        logCount:      logs.length,
+    });
+});
+
+// ── API: Set bot status ───────────────────────────────────────────────────────
+app.post('/api/setstatus', requireAuth, (req, res) => {
+    const { type, message } = req.body;
+    if (!type || !message) return res.status(400).json({ error: 'Missing fields' });
+    const triggerPath = path.join(__dirname, '../data/status_trigger.json');
+    fs.writeFileSync(triggerPath, JSON.stringify({ type, message }));
+    console.log(`[DASHBOARD] Status trigger: ${type} - ${message}`);
+    res.json({ ok: true });
 });
 
 // ── Catch-all: serve dashboard or login ──────────────────────────────────────

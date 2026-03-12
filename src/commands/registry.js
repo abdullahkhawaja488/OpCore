@@ -114,6 +114,42 @@ const commands = [
             { type: 7, name: 'notify', description: 'Channel for YouTube notifications', required: true },
         ],
     },
+    // ── Warnings ──────────────────────────────────────────────────────────────
+    {
+        name: 'warn',
+        description: 'Warn a user.',
+        options: [
+            { type: 6, name: 'user',   description: 'User to warn',    required: true },
+            { type: 3, name: 'reason', description: 'Reason for warn', required: true },
+        ],
+    },
+    {
+        name: 'warnings',
+        description: 'View warnings for a user.',
+        options: [{ type: 6, name: 'user', description: 'Target user', required: true }],
+    },
+    {
+        name: 'clearwarn',
+        description: 'Clear all warnings for a user.',
+        options: [{ type: 6, name: 'user', description: 'Target user', required: true }],
+    },
+
+    // ── Tickets ───────────────────────────────────────────────────────────────
+    {
+        name: 'ticket',
+        description: 'Manage support tickets.',
+        options: [
+            {
+                type: 1, name: 'open', description: 'Open a new ticket.',
+                options: [{ type: 3, name: 'reason', description: 'Reason', required: false }],
+            },
+            { type: 1, name: 'close', description: 'Close this ticket.' },
+            {
+                type: 1, name: 'add', description: 'Add a user to this ticket.',
+                options: [{ type: 6, name: 'user', description: 'User to add', required: true }],
+            },
+        ],
+    },
 ];
 
 function getAllCommands() {

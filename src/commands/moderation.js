@@ -24,6 +24,7 @@ async function kick(interaction) {
         return interaction.editReply('❌ I cannot kick someone with an equal or higher role than me.');
 
     await target.kick(reason);
+    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'kick', target: user.username, reason });
 
     if (!target.user.bot) {
         try {
@@ -67,6 +68,7 @@ async function ban(interaction) {
     }
 
     await guild.members.ban(user.id, { reason });
+    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'ban', target: user.username, reason });
     await interaction.editReply(`✅ **${user.username}** has been banned.\n**Reason:** ${reason}`);
 }
 
@@ -85,6 +87,7 @@ async function unban(interaction) {
         return interaction.editReply('❌ That user is not banned.');
 
     await guild.bans.remove(userId);
+    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'unban', target: user?.username ?? userId });
     const user = await interaction.client.users.fetch(userId).catch(() => null);
 
     if (user && !user.bot) {
@@ -110,6 +113,7 @@ async function timeout(interaction) {
     if (!target) return interaction.reply({ content: '❌ User not found.', flags: 64 });
 
     await target.timeout(duration * 1000, 'Timed out by bot');
+    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'tmt', target: user.username, reason: `${duration}s` });
     await interaction.reply({ content: `⏱️ **${user.username}** has been timed out for **${duration} seconds**.`, flags: 64 });
 }
 
@@ -139,6 +143,7 @@ async function clear(interaction) {
         return interaction.reply({ content: '❌ Please enter a number between 1 and 100.', flags: 64 });
 
     await interaction.channel.bulkDelete(amount, true);
+    logAction({ guildId: interaction.guild.id, guildName: interaction.guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'clear', reason: `${amount} messages` });
     await interaction.reply({ content: `🗑️ Deleted **${amount}** messages.`, flags: 64 });
 }
 

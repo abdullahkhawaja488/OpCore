@@ -2,632 +2,453 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Op Core — Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Op Core</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Cabinet+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg:       #0a0a0f;
-    --surface:  #111118;
-    --surface2: #16161f;
-    --border:   #1e1e2e;
-    --accent:   #5865f2;
-    --accent2:  #7289da;
-    --green:    #23d18b;
-    --red:      #ed4245;
-    --yellow:   #faa61a;
-    --text:     #e2e2f0;
-    --muted:    #5a5a7a;
-    --mono:     'Space Mono', monospace;
-    --display:  'Syne', sans-serif;
-  }
-
-  html, body { height: 100%; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 13px;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-
-  /* ── Topbar ── */
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
-    height: 56px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    flex-shrink: 0;
-  }
-
-  .topbar-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .logo {
-    font-family: var(--display);
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--text);
-  }
-
-  .logo span { color: var(--accent); }
-
-  .badge {
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    padding: 3px 8px;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-
-  .topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .user-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  .user-info img {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-  }
-
-  .btn {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    padding: 8px 16px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.15s;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .btn:hover { border-color: var(--accent); color: var(--text); }
-
-  .btn-accent {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .btn-accent:hover {
-    background: var(--accent);
-    color: #fff;
-  }
-
-  .btn-green  { border-color: var(--green); color: var(--green); }
-  .btn-green:hover { background: var(--green); color: #000; }
-
-  /* ── Layout ── */
-  .layout {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    flex: 1;
-    overflow: hidden;
-  }
-
-  /* ── Sidebar ── */
-  .sidebar {
-    border-right: 1px solid var(--border);
-    background: var(--surface);
-    overflow-y: auto;
-    padding: 24px 0;
-  }
-
-  .sidebar-section {
-    padding: 0 20px;
-    margin-bottom: 32px;
-  }
-
-  .sidebar-label {
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  .server-item {
-    padding: 10px 12px;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.15s;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .server-item:hover  { border-color: var(--border); background: var(--surface2); }
-  .server-item.active { border-color: var(--accent); background: rgba(88,101,242,0.08); }
-
-  .server-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--green);
-    flex-shrink: 0;
-  }
-
-  .server-name {
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    cursor: pointer;
-    color: var(--muted);
-    transition: color 0.15s;
-    font-size: 12px;
-    border: 1px solid transparent;
-    margin-bottom: 2px;
-  }
-
-  .nav-item:hover  { color: var(--text); border-color: var(--border); }
-  .nav-item.active { color: var(--text); border-color: var(--accent); background: rgba(88,101,242,0.08); }
-
-  /* ── Main ── */
-  .main {
-    overflow-y: auto;
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  /* ── Panel ── */
-  .panel {
-    border: 1px solid var(--border);
-    background: var(--surface);
-  }
-
-  .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .panel-title {
-    font-family: var(--display);
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-  }
-
-  .panel-body { padding: 20px; }
-
-  /* ── Stats row ── */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-  }
-
-  .stat {
-    background: var(--surface);
-    padding: 20px 24px;
-  }
-
-  .stat-label {
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .stat-value {
-    font-family: var(--display);
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1;
-  }
-
-  .stat-value.accent { color: var(--accent); }
-  .stat-value.green  { color: var(--green); }
-
-  /* ── Config form ── */
-  .config-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  .field { display: flex; flex-direction: column; gap: 6px; }
-
-  .field label {
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    text-transform: uppercase;
-  }
-
-  .field input {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 12px;
-    padding: 10px 12px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .field input:focus { border-color: var(--accent); }
-
-  .field input::placeholder { color: var(--muted); }
-
-  /* ── Logs ── */
-  .log-container {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    height: 340px;
-    overflow-y: auto;
-    padding: 16px;
-    font-size: 11px;
-    line-height: 1.8;
-  }
-
-  .log-entry { display: flex; gap: 12px; align-items: flex-start; }
-
-  .log-time  { color: var(--muted); flex-shrink: 0; font-size: 10px; }
-  .log-level { flex-shrink: 0; width: 40px; }
-  .log-level.info  { color: var(--green); }
-  .log-level.error { color: var(--red); }
-  .log-msg { color: var(--text); word-break: break-all; }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: var(--surface);
-    border: 1px solid var(--green);
-    color: var(--green);
-    padding: 12px 20px;
-    font-size: 12px;
-    letter-spacing: 0.05em;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: all 0.25s;
-    z-index: 999;
-    pointer-events: none;
-  }
-
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.error { border-color: var(--red); color: var(--red); }
-
-  /* ── Hidden ── */
-  .view { display: none; }
-  .view.active { display: contents; }
-
-  /* ── Scrollbar ── */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); }
-
-  .save-row { display: flex; justify-content: flex-end; margin-top: 20px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07080d;--s1:#0e0f17;--s2:#13141f;--s3:#1a1b29;
+  --border:#232438;--accent:#7c6dfa;--accent-dim:rgba(124,109,250,.12);
+  --green:#2dd4a0;--red:#f25c6e;--yellow:#f5a623;--blue:#3b9eff;
+  --text:#ddddf5;--muted:#5c5c80;
+  --mono:'IBM Plex Mono',monospace;--sans:'Cabinet Grotesk',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.topbar{height:52px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;z-index:50}
+.logo{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text);letter-spacing:.04em}
+.logo b{color:var(--accent)}
+.topbar-sep{flex:1}
+.user-chip{display:flex;align-items:center;gap:8px;font-size:12px;font-family:var(--mono);color:var(--muted)}
+.user-chip img{width:26px;height:26px;border-radius:50%;border:1px solid var(--border)}
+.logout-btn{font-family:var(--mono);font-size:11px;padding:5px 12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:.15s}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:220px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;padding:16px 0}
+.sidebar-section{margin-bottom:24px}
+.sidebar-label{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;padding:0 16px;margin-bottom:6px}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;border-left:2px solid transparent;transition:.12s;user-select:none}
+.nav-btn:hover{color:var(--text);background:var(--s2)}
+.nav-btn.active{color:var(--text);background:var(--accent-dim);border-left-color:var(--accent)}
+.nav-btn .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
+.server-pill{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;transition:.12s;border-left:2px solid transparent}
+.server-pill:hover{background:var(--s2)}
+.server-pill.active{background:var(--accent-dim);border-left-color:var(--accent)}
+.server-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.server-pill .sname{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.main{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px}
+.page-header{display:flex;align-items:center;justify-content:space-between}
+.page-title{font-family:var(--sans);font-size:20px;font-weight:800;letter-spacing:-.4px}
+.page-sub{font-size:12px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{background:var(--s1);border:1px solid var(--border);padding:18px 20px;border-radius:2px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--c,var(--accent))}
+.stat-label{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.stat-val{font-family:var(--sans);font-size:30px;font-weight:800;color:var(--c,var(--accent));line-height:1}
+.stat-sub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px}
+.panel{background:var(--s1);border:1px solid var(--border);border-radius:2px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.panel-title{font-size:13px;font-weight:700;letter-spacing:-.2px}
+.panel-body{padding:18px}
+.panel-body.no-pad{padding:0}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+.tbl th{text-align:left;padding:9px 14px;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--s2)}
+.badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.12em;padding:2px 7px;border-radius:2px;text-transform:uppercase;font-weight:600}
+.badge-green{background:rgba(45,212,160,.12);color:var(--green);border:1px solid rgba(45,212,160,.2)}
+.badge-red{background:rgba(242,92,110,.12);color:var(--red);border:1px solid rgba(242,92,110,.2)}
+.badge-yellow{background:rgba(245,166,35,.12);color:var(--yellow);border:1px solid rgba(245,166,35,.2)}
+.badge-blue{background:rgba(59,158,255,.12);color:var(--blue);border:1px solid rgba(59,158,255,.2)}
+.badge-accent{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(124,109,250,.2)}
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:7px 14px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;border-radius:2px}
+.btn:hover{border-color:var(--accent);color:var(--text)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-accent{border-color:var(--accent);color:var(--accent)}
+.btn-accent:hover{background:var(--accent);color:#fff}
+.btn-green{border-color:var(--green);color:var(--green)}
+.btn-green:hover{background:var(--green);color:#000}
+.btn-red{border-color:var(--red);color:var(--red)}
+.btn-red:hover{background:var(--red);color:#fff}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase}
+.field input,.field select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color .15s;border-radius:2px;width:100%}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field input::placeholder{color:var(--muted)}
+.log-wrap{background:var(--bg);height:360px;overflow-y:auto;padding:12px 16px;font-family:var(--mono);font-size:11px;line-height:1.9}
+.log-row{display:flex;gap:10px}
+.log-t{color:var(--muted);flex-shrink:0;font-size:10px}
+.log-l{flex-shrink:0;width:36px}
+.log-l.info{color:var(--green)}
+.log-l.error{color:var(--red)}
+.log-m{color:var(--text);word-break:break-all}
+.empty{text-align:center;padding:36px;color:var(--muted);font-family:var(--mono);font-size:12px}
+.filter-row{display:flex;gap:8px;align-items:center}
+.filter-row input,.filter-row select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 12px;outline:none;border-radius:2px;transition:.15s}
+.filter-row input:focus,.filter-row select:focus{border-color:var(--accent)}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;padding:10px 16px;opacity:0;transform:translateY(6px);transition:.2s;z-index:999;pointer-events:none;border-radius:2px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.err{border-color:var(--red);color:var(--red)}
+.page{display:none}
+.page.active{display:flex;flex-direction:column;gap:20px}
 </style>
 </head>
 <body>
 
-<!-- Topbar -->
 <div class="topbar">
-  <div class="topbar-left">
-    <div class="logo">OP<span>CORE</span></div>
-    <div class="badge">Dashboard</div>
+  <div class="logo">OP<b>CORE</b></div>
+  <div class="topbar-sep"></div>
+  <div class="user-chip">
+    <img id="av" src="https://cdn.discordapp.com/embed/avatars/0.png"/>
+    <span id="uname">...</span>
   </div>
-  <div class="topbar-right">
-    <div class="user-info">
-      <img id="avatar" src="" alt=""/>
-      <span id="username">...</span>
-    </div>
-    <a class="btn" href="/auth/logout">Logout</a>
-  </div>
+  <button class="logout-btn" onclick="location.href='/auth/logout'">Logout</button>
 </div>
 
-<!-- Layout -->
 <div class="layout">
-
-  <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-section">
-      <div class="sidebar-label">Navigation</div>
-      <div class="nav-item active" data-view="overview">
-        <span>◈</span> Overview
-      </div>
-      <div class="nav-item" data-view="logs">
-        <span>◉</span> Live Logs
-      </div>
+      <div class="sidebar-label">Menu</div>
+      <div class="nav-btn active" data-page="overview"><span class="icon">◈</span> Overview</div>
+      <div class="nav-btn" data-page="audit"><span class="icon">◉</span> Audit Log</div>
+      <div class="nav-btn" data-page="warnings"><span class="icon">⚠</span> Warnings</div>
+      <div class="nav-btn" data-page="botsettings"><span class="icon">⚙</span> Bot Settings</div>
+      <div class="nav-btn" data-page="logs"><span class="icon">▸</span> Live Logs</div>
     </div>
-
     <div class="sidebar-section">
       <div class="sidebar-label">Servers</div>
       <div id="server-list"></div>
     </div>
   </div>
 
-  <!-- Main -->
-  <div class="main" id="main-content">
+  <div class="main">
 
     <!-- Overview -->
-    <div class="view active" id="view-overview">
-      <div class="stats-row" id="stats-row">
-        <div class="stat">
-          <div class="stat-label">Servers</div>
-          <div class="stat-value accent" id="stat-servers">—</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Status</div>
-          <div class="stat-value green">Online</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Log Entries</div>
-          <div class="stat-value" id="stat-logs">—</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">YouTube</div>
-          <div class="stat-value green">Active</div>
-        </div>
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <div><div class="page-title">Overview</div><div class="page-sub">// Dashboard at a glance</div></div>
+        <button class="btn btn-green" id="yt-btn">▶ Trigger YT Check</button>
       </div>
-
+      <div class="stat-grid">
+        <div class="stat-card" style="--c:var(--accent)"><div class="stat-label">Servers</div><div class="stat-val" id="s-servers">—</div><div class="stat-sub">connected</div></div>
+        <div class="stat-card" style="--c:var(--green)"><div class="stat-label">Status</div><div class="stat-val" style="font-size:18px;padding-top:6px">Online ●</div><div class="stat-sub">all systems go</div></div>
+        <div class="stat-card" style="--c:var(--yellow)"><div class="stat-label">Warnings</div><div class="stat-val" id="s-warns">—</div><div class="stat-sub">total issued</div></div>
+        <div class="stat-card" style="--c:var(--blue)"><div class="stat-label">Audit Entries</div><div class="stat-val" id="s-audit">—</div><div class="stat-sub">actions logged</div></div>
+      </div>
       <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">YouTube Notifier</div>
-          <button class="btn btn-green" id="yt-trigger-btn">▶ Trigger Check Now</button>
-        </div>
-        <div class="panel-body" style="color: var(--muted); font-size: 12px; line-height: 2;">
-          Polls every <strong style="color:var(--text)">1 hour</strong> automatically.<br>
-          Use the button to force an immediate check.<br>
-          Results are posted to each server's configured notify channel.
+        <div class="panel-head"><div class="panel-title">Recent Activity</div></div>
+        <div class="panel-body no-pad">
+          <table class="tbl"><thead><tr><th>Time</th><th>Server</th><th>Moderator</th><th>Command</th><th>Target</th><th>Reason</th></tr></thead><tbody id="recent-body"></tbody></table>
         </div>
       </div>
     </div>
 
-    <!-- Logs view -->
-    <div class="view" id="view-logs">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">Live Logs</div>
-          <button class="btn" id="clear-logs-btn">Clear</button>
-        </div>
-        <div class="panel-body" style="padding: 0;">
-          <div class="log-container" id="log-container"></div>
-        </div>
+    <!-- Server config -->
+    <div class="page" id="page-server">
+      <div class="page-header">
+        <div><div class="page-title" id="srv-title">Server</div><div class="page-sub" id="srv-sub">// Configure channels and roles</div></div>
       </div>
-    </div>
-
-    <!-- Server config view (injected dynamically) -->
-    <div class="view" id="view-server">
-      <div class="panel" id="server-config-panel">
-        <div class="panel-header">
-          <div class="panel-title" id="server-config-title">Server Config</div>
-        </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Channels & Roles</div></div>
         <div class="panel-body">
-          <div class="config-grid" id="config-fields"></div>
-          <div class="save-row">
-            <button class="btn btn-accent" id="save-config-btn">Save Changes</button>
+          <div class="form-grid" id="srv-fields"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:16px">
+            <button class="btn btn-accent" id="srv-save">Save Changes</button>
           </div>
         </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Warnings in this Server</div></div>
+        <div class="panel-body no-pad">
+          <table class="tbl"><thead><tr><th>User ID</th><th>Count</th><th>Latest Reason</th></tr></thead><tbody id="srv-warn-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit -->
+    <div class="page" id="page-audit">
+      <div class="page-header">
+        <div><div class="page-title">Audit Log</div><div class="page-sub">// Every moderation action</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Actions</div>
+          <div class="filter-row">
+            <input id="audit-search" placeholder="Search..." style="width:160px"/>
+            <select id="audit-gfilter"><option value="">All Servers</option></select>
+          </div>
+        </div>
+        <div class="panel-body no-pad">
+          <table class="tbl"><thead><tr><th>Time</th><th>Server</th><th>Moderator</th><th>Command</th><th>Target</th><th>Reason</th></tr></thead><tbody id="audit-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warnings -->
+    <div class="page" id="page-warnings">
+      <div class="page-header">
+        <div><div class="page-title">Warnings</div><div class="page-sub">// All warnings across servers</div></div>
+        <select id="warn-gfilter" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 12px;outline:none;border-radius:2px"><option value="">All Servers</option></select>
+      </div>
+      <div class="panel">
+        <div class="panel-body no-pad">
+          <table class="tbl"><thead><tr><th>Server</th><th>User ID</th><th>Count</th><th>Latest Reason</th><th>Date</th></tr></thead><tbody id="warn-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bot Settings -->
+    <div class="page" id="page-botsettings">
+      <div class="page-header">
+        <div><div class="page-title">Bot Settings</div><div class="page-sub">// Manage bot presence</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Bot Status</div></div>
+        <div class="panel-body">
+          <div class="form-grid" style="grid-template-columns:200px 1fr">
+            <div class="field">
+              <label>Activity Type</label>
+              <select id="status-type">
+                <option value="watching">Watching</option>
+                <option value="listening">Listening</option>
+                <option value="playing">Playing</option>
+                <option value="competing">Competing</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Status Text</label>
+              <input id="status-text" placeholder="e.g. ChillZone"/>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:16px">
+            <button class="btn btn-accent" id="status-save">Update Status</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="page" id="page-logs">
+      <div class="page-header">
+        <div><div class="page-title">Live Logs</div><div class="page-sub">// Real-time bot output</div></div>
+        <button class="btn" id="clear-logs">Clear</button>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0"><div class="log-wrap" id="log-wrap"></div></div>
       </div>
     </div>
 
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ── State ──────────────────────────────────────────────────────────────────
-let servers    = {};
-let activeGuild = null;
+let servers={},audit=[],warnings={},activeGuild=null;
 
-// ── Init ───────────────────────────────────────────────────────────────────
-async function init() {
-  const me = await fetch('/auth/me').then(r => r.json()).catch(() => null);
-  if (!me || me.error) { location.href = '/login.html'; return; }
-
-  document.getElementById('username').textContent = me.username;
-  if (me.avatar) {
-    document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64`;
-  }
-
-  await loadServers();
-  startLogStream();
+async function boot(){
+  const me=await api('/auth/me');
+  if(!me||me.error){location.href='/login.html';return;}
+  document.getElementById('uname').textContent=me.username;
+  if(me.avatar)document.getElementById('av').src=`https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64`;
+  await Promise.all([loadServers(),loadAudit(),loadWarnings(),loadStats()]);
+  startLogs();
 }
 
-// ── Servers ────────────────────────────────────────────────────────────────
-async function loadServers() {
-  servers = await fetch('/api/servers').then(r => r.json()).catch(() => ({}));
-  const list = document.getElementById('server-list');
-  list.innerHTML = '';
+async function api(url,opts={}){
+  try{const r=await fetch(url,opts);return r.json();}catch{return null;}
+}
 
-  const ids = Object.keys(servers);
-  document.getElementById('stat-servers').textContent = ids.length;
-
-  ids.forEach(guildId => {
-    const conf = servers[guildId];
-    const el   = document.createElement('div');
-    el.className  = 'server-item';
-    el.dataset.id = guildId;
-    el.innerHTML  = `<div class="server-dot"></div><div class="server-name">${conf.serverName || guildId}</div>`;
-    el.onclick    = () => openServer(guildId);
-    list.appendChild(el);
+async function loadServers(){
+  servers=await api('/api/servers')||{};
+  const el=document.getElementById('server-list');
+  el.innerHTML='';
+  Object.entries(servers).forEach(([id,conf])=>{
+    const d=document.createElement('div');
+    d.className='server-pill';d.dataset.id=id;
+    d.innerHTML=`<div class="dot"></div><div class="sname">${esc(conf.serverName||id)}</div>`;
+    d.onclick=()=>openServer(id);
+    el.appendChild(d);
   });
 }
 
-function openServer(guildId) {
-  activeGuild = guildId;
-  setView('server');
-
-  document.querySelectorAll('.server-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.id === guildId);
+async function loadAudit(){
+  audit=await api('/api/audit?limit=200')||[];
+  renderAudit();
+  renderRecentAudit();
+  // populate filter
+  const sel=document.getElementById('audit-gfilter');
+  [...new Set(audit.map(e=>e.guildId))].forEach(id=>{
+    const o=document.createElement('option');o.value=id;o.textContent=servers[id]?.serverName||id;sel.appendChild(o);
   });
+}
 
-  const conf   = servers[guildId];
-  const title  = document.getElementById('server-config-title');
-  const fields = document.getElementById('config-fields');
+async function loadWarnings(){
+  warnings=await api('/api/warnings')||{};
+  renderWarnings('');
+  const sel=document.getElementById('warn-gfilter');
+  Object.keys(warnings).forEach(id=>{
+    const o=document.createElement('option');o.value=id;o.textContent=servers[id]?.serverName||id;sel.appendChild(o);
+  });
+}
 
-  title.textContent = conf.serverName || guildId;
+async function loadStats(){
+  const s=await api('/api/stats');
+  if(!s)return;
+  document.getElementById('s-servers').textContent=s.serverCount;
+  document.getElementById('s-warns').textContent=s.totalWarnings;
+  document.getElementById('s-audit').textContent=s.auditCount;
+}
 
-  const editable = [
-    { key: 'WELCOME_CHANNEL',         label: 'Welcome Channel ID' },
-    { key: 'BYE_CHANNEL',             label: 'Goodbye Channel ID' },
-    { key: 'MEMBER_COUNT_CHANNEL_ID', label: 'Member Count Channel ID' },
-    { key: 'RULES_CHANNEL',           label: 'Rules Channel ID' },
-    { key: 'DEFAULT_ROLE_ID',         label: 'Default Role ID' },
-    { key: 'NOTIFY_CHANNEL',          label: 'YouTube Notify Channel ID' },
+function openServer(guildId){
+  activeGuild=guildId;showPage('server');
+  document.querySelectorAll('.server-pill').forEach(p=>p.classList.toggle('active',p.dataset.id===guildId));
+  document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
+  const conf=servers[guildId];
+  document.getElementById('srv-title').textContent=conf.serverName||guildId;
+  document.getElementById('srv-sub').textContent=`// Guild ID: ${guildId}`;
+  const fields=[
+    {key:'WELCOME_CHANNEL',label:'Welcome Channel ID'},
+    {key:'BYE_CHANNEL',label:'Goodbye Channel ID'},
+    {key:'MEMBER_COUNT_CHANNEL_ID',label:'Member Count Channel ID'},
+    {key:'RULES_CHANNEL',label:'Rules Channel ID'},
+    {key:'NOTIFY_CHANNEL',label:'YouTube Notify Channel ID'},
+    {key:'DEFAULT_ROLE_ID',label:'Default Role ID'},
   ];
-
-  fields.innerHTML = editable.map(f => `
-    <div class="field">
-      <label>${f.label}</label>
-      <input type="text" data-key="${f.key}" value="${conf[f.key] || ''}" placeholder="Channel / Role ID"/>
-    </div>
+  document.getElementById('srv-fields').innerHTML=fields.map(f=>`
+    <div class="field"><label>${f.label}</label><input data-key="${f.key}" value="${esc(conf[f.key]||'')}" placeholder="ID"/></div>
   `).join('');
+  const wb=document.getElementById('srv-warn-body');
+  const gw=warnings[guildId]||{};
+  const wkeys=Object.keys(gw);
+  if(!wkeys.length){wb.innerHTML=`<tr><td colspan="3"><div class="empty">No warnings</div></td></tr>`;}
+  else{wb.innerHTML=wkeys.map(uid=>{const ws=gw[uid];const lat=ws[ws.length-1];return`<tr><td><span class="badge badge-accent">${uid}</span></td><td><span class="badge badge-yellow">${ws.length}</span></td><td>${esc(lat?.reason||'—')}</td></tr>`;}).join('');}
 }
 
-document.getElementById('save-config-btn').onclick = async () => {
-  if (!activeGuild) return;
-  const body = {};
-  document.querySelectorAll('#config-fields input').forEach(inp => {
-    body[inp.dataset.key] = inp.value.trim();
-  });
-  const res = await fetch(`/api/servers/${activeGuild}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (res.ok) {
-    toast('Config saved ✓');
-    servers[activeGuild] = { ...servers[activeGuild], ...body };
-  } else {
-    toast('Save failed', true);
-  }
+document.getElementById('srv-save').onclick=async()=>{
+  if(!activeGuild)return;
+  const body={};
+  document.querySelectorAll('#srv-fields input').forEach(i=>body[i.dataset.key]=i.value.trim());
+  const r=await api(`/api/servers/${activeGuild}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r?.ok){toast('Saved ✓');servers[activeGuild]={...servers[activeGuild],...body};}
+  else toast('Save failed',true);
 };
 
-// ── YT Trigger ────────────────────────────────────────────────────────────
-document.getElementById('yt-trigger-btn').onclick = async () => {
-  const btn = document.getElementById('yt-trigger-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Triggering...';
-  const res = await fetch('/api/yt/check', { method: 'POST' });
-  if (res.ok) {
-    toast('YT check triggered ✓');
-  } else {
-    toast('Failed to trigger', true);
-  }
-  setTimeout(() => {
-    btn.disabled = false;
-    btn.textContent = '▶ Trigger Check Now';
-  }, 3000);
-};
-
-// ── Logs ───────────────────────────────────────────────────────────────────
-function renderLog(entry) {
-  const container = document.getElementById('log-container');
-  const el        = document.createElement('div');
-  el.className    = 'log-entry';
-  const t         = new Date(entry.time).toLocaleTimeString();
-  el.innerHTML    = `
-    <span class="log-time">${t}</span>
-    <span class="log-level ${entry.level}">${entry.level.toUpperCase()}</span>
-    <span class="log-msg">${escHtml(entry.msg)}</span>
-  `;
-  container.appendChild(el);
-  container.scrollTop = container.scrollHeight;
-  document.getElementById('stat-logs').textContent = container.children.length;
+function renderAudit(){
+  const search=document.getElementById('audit-search')?.value.toLowerCase()||'';
+  const guild=document.getElementById('audit-gfilter')?.value||'';
+  let rows=audit;
+  if(search)rows=rows.filter(e=>JSON.stringify(e).toLowerCase().includes(search));
+  if(guild)rows=rows.filter(e=>e.guildId===guild);
+  const body=document.getElementById('audit-body');
+  if(!rows.length){body.innerHTML=`<tr><td colspan="6"><div class="empty">No entries</div></td></tr>`;return;}
+  body.innerHTML=rows.map(e=>`<tr>
+    <td style="color:var(--muted)">${fmtTime(e.timestamp)}</td>
+    <td>${esc(e.guildName||e.guildId)}</td>
+    <td>${esc(e.username)}</td>
+    <td><span class="badge badge-accent">${esc(e.command)}</span></td>
+    <td>${e.target?esc(e.target):'<span style="color:var(--muted)">—</span>'}</td>
+    <td style="color:var(--muted)">${e.reason?esc(e.reason):'—'}</td>
+  </tr>`).join('');
 }
 
-function startLogStream() {
-  const es = new EventSource('/api/logs/stream');
-  es.onmessage = e => {
-    const data = JSON.parse(e.data);
-    if (data.type === 'init') {
-      document.getElementById('log-container').innerHTML = '';
-      data.logs.forEach(renderLog);
-    } else if (data.type === 'new') {
-      data.logs.forEach(renderLog);
-    }
+function renderRecentAudit(){
+  const body=document.getElementById('recent-body');
+  const rows=audit.slice(0,8);
+  if(!rows.length){body.innerHTML=`<tr><td colspan="6"><div class="empty">No activity yet</div></td></tr>`;return;}
+  body.innerHTML=rows.map(e=>`<tr>
+    <td style="color:var(--muted)">${fmtTime(e.timestamp)}</td>
+    <td>${esc(e.guildName||e.guildId)}</td>
+    <td>${esc(e.username)}</td>
+    <td><span class="badge badge-accent">${esc(e.command)}</span></td>
+    <td>${e.target?esc(e.target):'—'}</td>
+    <td style="color:var(--muted)">${e.reason?esc(e.reason):'—'}</td>
+  </tr>`).join('');
+}
+
+document.getElementById('audit-search').oninput=renderAudit;
+document.getElementById('audit-gfilter').onchange=renderAudit;
+
+function renderWarnings(guildFilter){
+  const body=document.getElementById('warn-body');
+  const rows=[];
+  Object.entries(warnings).forEach(([guildId,users])=>{
+    if(guildFilter&&guildId!==guildFilter)return;
+    Object.entries(users).forEach(([uid,ws])=>{
+      const lat=ws[ws.length-1];
+      rows.push({guildId,uid,count:ws.length,reason:lat?.reason,ts:lat?.timestamp});
+    });
+  });
+  rows.sort((a,b)=>b.count-a.count);
+  if(!rows.length){body.innerHTML=`<tr><td colspan="5"><div class="empty">No warnings issued</div></td></tr>`;return;}
+  body.innerHTML=rows.map(r=>`<tr>
+    <td>${esc(servers[r.guildId]?.serverName||r.guildId)}</td>
+    <td><span class="badge badge-accent">${r.uid}</span></td>
+    <td><span class="badge ${r.count>=3?'badge-red':'badge-yellow'}">${r.count}</span></td>
+    <td>${esc(r.reason||'—')}</td>
+    <td style="color:var(--muted)">${r.ts?fmtTime(r.ts):'—'}</td>
+  </tr>`).join('');
+}
+
+document.getElementById('warn-gfilter').onchange=e=>renderWarnings(e.target.value);
+
+document.getElementById('yt-btn').onclick=async()=>{
+  const btn=document.getElementById('yt-btn');
+  btn.disabled=true;btn.textContent='⏳ Checking...';
+  const r=await api('/api/yt/check',{method:'POST'});
+  toast(r?.ok?'YT check triggered ✓':'Failed',!r?.ok);
+  setTimeout(()=>{btn.disabled=false;btn.textContent='▶ Trigger YT Check';},3000);
+};
+
+document.getElementById('status-save').onclick=async()=>{
+  const type=document.getElementById('status-type').value;
+  const text=document.getElementById('status-text').value.trim();
+  if(!text)return toast('Enter status text',true);
+  const r=await api('/api/setstatus',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,message:text})});
+  if(r?.ok)toast('Status updated ✓');else toast('Failed — use /setstatus in Discord instead',true);
+};
+
+function appendLog(e){
+  const w=document.getElementById('log-wrap');
+  const d=document.createElement('div');d.className='log-row';
+  d.innerHTML=`<span class="log-t">${new Date(e.time).toLocaleTimeString()}</span><span class="log-l ${e.level}">${e.level.toUpperCase()}</span><span class="log-m">${esc(e.msg)}</span>`;
+  w.appendChild(d);w.scrollTop=w.scrollHeight;
+}
+
+function startLogs(){
+  const es=new EventSource('/api/logs/stream');
+  es.onmessage=ev=>{
+    const data=JSON.parse(ev.data);
+    const w=document.getElementById('log-wrap');
+    if(data.type==='init'){w.innerHTML='';data.logs.forEach(appendLog);}
+    else data.logs.forEach(appendLog);
   };
 }
 
-document.getElementById('clear-logs-btn').onclick = () => {
-  document.getElementById('log-container').innerHTML = '';
-};
+document.getElementById('clear-logs').onclick=()=>{document.getElementById('log-wrap').innerHTML='';};
 
-// ── View switching ─────────────────────────────────────────────────────────
-function setView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById(`view-${name}`)?.classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => {
-    n.classList.toggle('active', n.dataset.view === name);
-  });
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`page-${name}`)?.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(n=>n.classList.toggle('active',n.dataset.page===name));
+  if(name!=='server')document.querySelectorAll('.server-pill').forEach(p=>p.classList.remove('active'));
 }
 
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.onclick = () => {
-    setView(item.dataset.view);
-    document.querySelectorAll('.server-item').forEach(s => s.classList.remove('active'));
-  };
-});
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{showPage(b.dataset.page);activeGuild=null;});
 
-// ── Toast ──────────────────────────────────────────────────────────────────
-function toast(msg, isError = false) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className   = 'toast show' + (isError ? ' error' : '');
-  setTimeout(() => el.classList.remove('show'), 3000);
-}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtTime(ts){const d=new Date(ts);return d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function toast(msg,isErr=false){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show'+(isErr?' err':'');setTimeout(()=>el.classList.remove('show'),3000);}
 
-function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-init();
+boot();
 </script>
 </body>
 </html>
