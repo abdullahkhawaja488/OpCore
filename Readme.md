@@ -57,9 +57,6 @@ npm install
 
 ### 2. Configure environment variables
 Copy `.env.example` to `.env` and fill in your values:
-```bash
-cp .env.example .env
-```
 
 | Variable | Description |
 |---|---|
@@ -67,8 +64,7 @@ cp .env.example .env
 | `CLIENT_ID` | Your bot's application ID |
 | `ABDULLAH` | Your Discord user ID (owner) |
 | `YOUTUBE_API_KEY` | Google Cloud YouTube Data API v3 key |
-| `CZPK` | Guild ID of your first server |
-| `The Eagnibals` | Guild ID of your second server |
+| `CHILLZONE` | Guild ID of your server |
 | `DISCORD_CLIENT_SECRET` | OAuth2 client secret for the dashboard |
 | `DASHBOARD_REDIRECT_URI` | e.g. `http://localhost:4000/auth/callback` |
 | `SESSION_SECRET` | Any long random string |
