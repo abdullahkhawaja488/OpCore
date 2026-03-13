@@ -1,4 +1,5 @@
 const { PermissionsBitField } = require('discord.js');
+const { logAction } = require('../utils/logger'); // ✅ fix: was never imported
 
 // ── kick ──────────────────────────────────────────────────────────────────────
 async function kick(interaction) {
@@ -23,9 +24,7 @@ async function kick(interaction) {
     if (target.roles.highest.position >= guild.members.me.roles.highest.position)
         return interaction.editReply('❌ I cannot kick someone with an equal or higher role than me.');
 
-    await target.kick(reason);
-    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'kick', target: user.username, reason });
-
+    // ✅ fix: DM before kick so user is still in server when DM is sent
     if (!target.user.bot) {
         try {
             const invite = await interaction.channel.createInvite({ maxAge: 604800, maxUses: 5, unique: true });
@@ -35,6 +34,8 @@ async function kick(interaction) {
         }
     }
 
+    await target.kick(reason);
+    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'kick', target: user.username, reason });
     await interaction.editReply(`✅ **${user.username}** has been kicked.\n**Reason:** ${reason}`);
 }
 
@@ -52,7 +53,6 @@ async function ban(interaction) {
     if (!guild.members.me.permissions.has(PermissionsBitField.Flags.BanMembers))
         return interaction.editReply('❌ I don\'t have permission to ban members.');
 
-    // Role check only if they're still in the server
     const target = await guild.members.fetch(user.id).catch(() => null);
     if (target) {
         if (target.roles.highest.position >= executor.roles.highest.position)
@@ -82,13 +82,19 @@ async function unban(interaction) {
     if (!executor.permissions.has(PermissionsBitField.Flags.BanMembers))
         return interaction.editReply('❌ You don\'t have permission to unban members.');
 
-    const bannedUsers = await guild.bans.fetch();
-    if (!bannedUsers.has(userId))
-        return interaction.editReply('❌ That user is not banned.');
+    // ✅ fix: validate ID format before hitting API
+    if (!/^\d{17,19}$/.test(userId))
+        return interaction.editReply('❌ Invalid user ID format.');
+
+    // ✅ fix: fetch single ban instead of all bans (avoids 1000-entry pagination cap)
+    const ban = await guild.bans.fetch(userId).catch(() => null);
+    if (!ban) return interaction.editReply('❌ That user is not banned.');
+
+    // ✅ fix: fetch user BEFORE logAction so it's defined
+    const user = await interaction.client.users.fetch(userId).catch(() => null);
 
     await guild.bans.remove(userId);
     logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'unban', target: user?.username ?? userId });
-    const user = await interaction.client.users.fetch(userId).catch(() => null);
 
     if (user && !user.bot) {
         try {
@@ -102,34 +108,44 @@ async function unban(interaction) {
 
 // ── timeout ───────────────────────────────────────────────────────────────────
 async function timeout(interaction) {
+    // ✅ fix: added deferReply to avoid interaction expiry
+    await interaction.deferReply({ flags: 64 });
+
     const { options, guild, member: executor } = interaction;
     const user     = options.getUser('user');
-    const duration = options.getInteger('duration'); // seconds
+    const duration = options.getInteger('duration');
+    const reason   = options.getString('reason') || 'No reason provided'; // ✅ fix: now accepts reason
 
     if (!executor.permissions.has(PermissionsBitField.Flags.ModerateMembers))
-        return interaction.reply({ content: '❌ You don\'t have permission to timeout members.', flags: 64 });
+        return interaction.editReply('❌ You don\'t have permission to timeout members.');
 
     const target = await guild.members.fetch(user.id).catch(() => null);
-    if (!target) return interaction.reply({ content: '❌ User not found.', flags: 64 });
+    if (!target) return interaction.editReply('❌ User not found.');
 
-    await target.timeout(duration * 1000, 'Timed out by bot');
-    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'tmt', target: user.username, reason: `${duration}s` });
-    await interaction.reply({ content: `⏱️ **${user.username}** has been timed out for **${duration} seconds**.`, flags: 64 });
+    await target.timeout(duration * 1000, reason);
+    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'tmt', target: user.username, reason: `${duration}s — ${reason}` });
+    await interaction.editReply(`⏱️ **${user.username}** has been timed out for **${duration} seconds**.\n**Reason:** ${reason}`);
 }
 
 // ── cancelTimeout ─────────────────────────────────────────────────────────────
 async function cancelTimeout(interaction) {
+    // ✅ fix: added deferReply to avoid interaction expiry
+    await interaction.deferReply({ flags: 64 });
+
     const { options, guild, member: executor } = interaction;
     const user = options.getUser('user');
 
     if (!executor.permissions.has(PermissionsBitField.Flags.ModerateMembers))
-        return interaction.reply({ content: '❌ You don\'t have permission to cancel timeouts.', flags: 64 });
+        return interaction.editReply('❌ You don\'t have permission to cancel timeouts.');
 
     const target = await guild.members.fetch(user.id).catch(() => null);
-    if (!target) return interaction.reply({ content: '❌ User not found.', flags: 64 });
+    if (!target) return interaction.editReply('❌ User not found.');
 
     await target.timeout(null);
-    await interaction.reply({ content: `✅ **${user.username}**'s timeout has been cancelled.`, flags: 64 });
+
+    // ✅ fix: added missing logAction call
+    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'cancel_timeout', target: user.username });
+    await interaction.editReply(`✅ **${user.username}**'s timeout has been cancelled.`);
 }
 
 // ── clear ─────────────────────────────────────────────────────────────────────
@@ -142,9 +158,10 @@ async function clear(interaction) {
     if (amount < 1 || amount > 100)
         return interaction.reply({ content: '❌ Please enter a number between 1 and 100.', flags: 64 });
 
-    await interaction.channel.bulkDelete(amount, true);
-    logAction({ guildId: interaction.guild.id, guildName: interaction.guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'clear', reason: `${amount} messages` });
-    await interaction.reply({ content: `🗑️ Deleted **${amount}** messages.`, flags: 64 });
+    // ✅ fix: report actual deleted count, not requested amount (old msgs >14d are skipped by Discord)
+    const deleted = await interaction.channel.bulkDelete(amount, true);
+    logAction({ guildId: interaction.guild.id, guildName: interaction.guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'clear', reason: `${deleted.size} messages` });
+    await interaction.reply({ content: `🗑️ Deleted **${deleted.size}** messages.`, flags: 64 });
 }
 
 module.exports = { kick, ban, unban, timeout, cancelTimeout, clear };
