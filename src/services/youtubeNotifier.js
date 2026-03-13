@@ -26,9 +26,11 @@ async function loadSeen() {
         const res = await axios.get(`${UPSTASH_URL}/get/seen_videos`, {
             headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
         });
-        return res.data.result ? JSON.parse(res.data.result) : [];
-    } catch (err) {
-        console.error('[YT NOTIFIER] Failed to load seen videos:', err.response?.data || err);
+        const result = res.data.result;
+        if (!result) return [];
+        const parsed = JSON.parse(result);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
         return [];
     }
 }
@@ -36,16 +38,12 @@ async function loadSeen() {
 async function saveSeen(ids) {
     try {
         const trimmed = ids.slice(-MAX_SEEN);
-        const encoded = encodeURIComponent(JSON.stringify(trimmed));
-        await axios.post(
-            `${UPSTASH_URL}/set/seen_videos/${encoded}`,
-            null,
-            {
-                headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
-            }
+        await axios.post(`${UPSTASH_URL}/set/seen_videos`,
+            JSON.stringify(JSON.stringify(trimmed)),
+            { headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' } }
         );
     } catch (err) {
-        console.error('[YT NOTIFIER] Failed to save seen videos:', err.response?.data || err);
+        console.error('[YT NOTIFIER] Failed to save seen videos:', err.message);
     }
 }
 
