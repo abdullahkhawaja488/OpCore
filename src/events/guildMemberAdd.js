@@ -33,13 +33,8 @@ async function handleMemberAdd(member) {
         const embed = new EmbedBuilder()
             .setColor(0x2F3136)
             .setTitle(`Welcome to ${member.guild.name}! 🎉`)
-            .setDescription(
-                `Hey <@${member.id}>, glad you're here!\n` +
-                `Please check out ${rulesChannel} and enjoy your stay.`
-            )
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 512 }))
-            .setFooter({ text: `Member #${member.guild.memberCount}` })
-            .setTimestamp();
+        
 
         await channel.send({ embeds: [embed] }).catch(err =>
             console.error('[WELCOME] Failed to send welcome message:', err.message)
