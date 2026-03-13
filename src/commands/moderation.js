@@ -1,6 +1,5 @@
 const { PermissionsBitField } = require('discord.js');
-const { logAction } = require('../utils/logger'); // ✅ fix: was never imported
-
+const { logAction } = require('../services/audit');
 // ── kick ──────────────────────────────────────────────────────────────────────
 async function kick(interaction) {
     await interaction.deferReply({ flags: 64 });
