@@ -4,7 +4,6 @@ const session      = require('express-session');
 const axios        = require('axios');
 const path         = require('path');
 const fs           = require('fs');
-const { execSync } = require('child_process');
 
 const app  = express();
 const PORT = process.env.DASHBOARD_PORT || 4000;
