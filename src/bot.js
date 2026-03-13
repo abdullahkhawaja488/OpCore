@@ -55,6 +55,7 @@ client.once('clientReady', async () => {
             console.error(`[BOT] Failed for ${guild.name}:`, err.message);
         }
     }
+    updateAllMemberCounts();
 });
 
 // Register commands when the bot joins a new server
