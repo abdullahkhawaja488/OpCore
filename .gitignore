@@ -1,1 +1,7 @@
 .env
+data/seen_videos.json
+data/audit.json
+data/warnings.json
+data/dashboard.log
+data/yt_trigger
+data/status_trigger.json
