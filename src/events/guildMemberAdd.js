@@ -37,8 +37,8 @@ async function handleMemberAdd(member) {
 
         const embed = new EmbedBuilder()
             .setColor(color)
+            .setAuthor({ name: member.user.username, iconURL: member.user.displayAvatarURL({ size: 64 }) })
             .setDescription(description)
-            .setThumbnail(member.user.displayAvatarURL({ size: 512 }))
             .setTimestamp();
 
         if (title) embed.setTitle(title
