@@ -28,7 +28,7 @@ async function handleMemberAdd(member) {
         const embed = new EmbedBuilder()
             .setColor(0x57F287)
             .setDescription(`<@${member.user.id}> joined the server.`)
-            .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 512 }))
+            .setThumbnail(member.user.displayAvatarURL({ size: 512 }))
             .setTimestamp();
 
         await channel.send({ embeds: [embed] }).catch(err =>

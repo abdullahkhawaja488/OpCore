@@ -21,7 +21,11 @@ async function role(interaction) {
         if (member.roles.cache.has(role.id))
             return interaction.reply({ content: `⚠️ **${user.username}** already has the **${role.name}** role.`, flags: 64 });
 
-        await member.roles.add(role);
+        try {
+            await member.roles.add(role);
+        } catch (err) {
+            return interaction.reply({ content: `❌ Failed to give the role: ${err.message}`, flags: 64 });
+        }
         return interaction.reply({ content: `✅ **${role.name}** given to **${user.username}**.`, flags: 64 });
     }
 
@@ -29,7 +33,11 @@ async function role(interaction) {
         if (!member.roles.cache.has(role.id))
             return interaction.reply({ content: `⚠️ **${user.username}** doesn't have the **${role.name}** role.`, flags: 64 });
 
-        await member.roles.remove(role);
+        try {
+            await member.roles.remove(role);
+        } catch (err) {
+            return interaction.reply({ content: `❌ Failed to remove the role: ${err.message}`, flags: 64 });
+        }
         return interaction.reply({ content: `✅ **${role.name}** removed from **${user.username}**.`, flags: 64 });
     }
 }

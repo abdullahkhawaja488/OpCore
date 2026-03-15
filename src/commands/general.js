@@ -9,7 +9,7 @@ async function help(interaction) {
 }
 
 async function links(client, interaction) {
-    const avatarURL = client.user.displayAvatarURL({ dynamic: true, size: 512 });
+    const avatarURL = client.user.displayAvatarURL({ size: 512 });
 
     const embed = new EmbedBuilder()
         .setColor(0x2F3136)
@@ -24,13 +24,15 @@ async function links(client, interaction) {
 }
 
 async function server(client, interaction) {
+    await interaction.deferReply();
+
     const guild = interaction.guild;
 
     const totalChannels = guild.channels.cache.size;
     const totalRoles    = guild.roles.cache.size;
     const serverOwner   = await guild.fetchOwner();
     const ownerName     = serverOwner.displayName || serverOwner.user.username;
-    await guild.members.fetch();
+    await guild.members.fetch({ limit: 1000 }).catch(() => {});
     const adminCount = guild.members.cache.filter(m => m.permissions.has(PermissionFlagsBits.Administrator)).size;
     const latency       = Date.now() - interaction.createdTimestamp;
     const apiLatency    = Math.round(client.ws.ping);
@@ -38,7 +40,7 @@ async function server(client, interaction) {
     const embed = new EmbedBuilder()
         .setColor(0x2F3136)
         .setAuthor({ name: guild.name.toUpperCase() })
-        .setThumbnail(guild.iconURL({ dynamic: true, size: 1024 }))
+        .setThumbnail(guild.iconURL({ size: 1024 }))
         .addFields(
             { name: 'Owner',       value: ownerName,                      inline: true },
             { name: 'Admins',      value: `${adminCount}`,                inline: true },
@@ -51,16 +53,16 @@ async function server(client, interaction) {
         .setFooter({ text: 'OpCore' })
         .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
 }
 
 async function banlist(interaction) {
+    await interaction.deferReply({ flags: 64 });
+
     const bans = await interaction.guild.bans.fetch({ limit: 1000 });
 
     if (bans.size === 0)
-        return interaction.reply({ content: 'No banned users in this server.', flags: 64 });
-
-    if (bans.size === 1000) await interaction.followUp({ content: '⚠️ Only showing first 1000 bans.', flags: 64 }).catch(() => {});
+        return interaction.editReply('No banned users in this server.');
 
     let description = '';
     bans.forEach(({ user, reason }) => {
@@ -69,12 +71,25 @@ async function banlist(interaction) {
         description += '\n';
     });
 
+    // Discord embed description limit is 4096 chars — truncate with notice if needed
+    const LIMIT = 4000;
+    let truncated = false;
+    if (description.length > LIMIT) {
+        description = description.slice(0, LIMIT);
+        // cut at last newline to avoid splitting a line
+        description = description.slice(0, description.lastIndexOf('\n'));
+        truncated = true;
+    }
+
     const embed = new EmbedBuilder()
         .setTitle('🔨 Banned Users')
         .setColor('#ff0000')
-        .setDescription(description);
+        .setDescription(description)
+        .setFooter({ text: `${bans.size} total ban${bans.size !== 1 ? 's' : ''}${truncated ? ' — list truncated' : ''}` });
 
-    await interaction.reply({ embeds: [embed], flags: 64 });
+    await interaction.editReply({ embeds: [embed] });
+    if (bans.size === 1000)
+        await interaction.followUp({ content: '⚠️ Only showing first 1000 bans.', flags: 64 }).catch(() => {});
 }
 
-module.exports = { ping, help, server, banlist };
+module.exports = { ping, help, links, server, banlist };

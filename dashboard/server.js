@@ -40,7 +40,7 @@ console.error = (...a) => { _error(...a); pushLog('error', a.join(' ')); };
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-    secret:            process.env.SESSION_SECRET,
+    secret:            process.env.SESSION_SECRET || (() => { throw new Error('[DASHBOARD] SESSION_SECRET is not set in .env'); })(),
     resave:            false,
     saveUninitialized: false,
     cookie:            { secure: false, maxAge: 24 * 60 * 60 * 1000 },
@@ -163,7 +163,11 @@ app.get('/api/logs/stream', requireAuth, (req, res) => {
         if (logs.length > lastLen) {
             const newLogs = logs.slice(lastLen);
             lastLen = logs.length;
-            res.write(`data: ${JSON.stringify({ type: 'new', logs: newLogs })}\n\n`);
+            try {
+                res.write(`data: ${JSON.stringify({ type: 'new', logs: newLogs })}\n\n`);
+            } catch {
+                clearInterval(interval);
+            }
         }
     }, 1000);
 

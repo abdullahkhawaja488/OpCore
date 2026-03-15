@@ -14,7 +14,7 @@ async function open(interaction) {
 
     // Check if user already has an open ticket
     const existing = guild.channels.cache.find(
-        c => c.name === `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}` && c.type === ChannelType.GuildText
+        c => c.name === `ticket-${user.id}` && c.type === ChannelType.GuildText
     );
 
     if (existing)
@@ -24,7 +24,7 @@ async function open(interaction) {
     const category = guild.channels.cache.find(c => c.type === ChannelType.GuildCategory && c.name.toLowerCase() === 'tickets');
 
     const channel = await guild.channels.create({
-        name: `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        name: `ticket-${user.id}`,
         type: ChannelType.GuildText,
         parent: category?.id || null,
         permissionOverwrites: [
@@ -56,6 +56,15 @@ async function open(interaction) {
         reason,
     });
 
+    await logToChannel(interaction.client, {
+        guildId:   guild.id,
+        guildName: guild.name,
+        userId:    user.id,
+        username:  user.username,
+        command:   'ticket open',
+        reason,
+    });
+
     await interaction.editReply(`✅ Ticket created: ${channel}`);
 }
 
@@ -65,11 +74,10 @@ async function close(interaction) {
 
     if (!channel.name.startsWith('ticket-'))
         return interaction.reply({ content: '❌ This is not a ticket channel.', flags: 64 });
-    // in both close() and handleTicketClose(), add this check after the channel.name check
-const isOwner = channel.name === `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-const isMod   = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
-if (!isOwner && !isMod)
-    return interaction.reply({ content: '❌ Only the ticket owner or a moderator can close this.', flags: 64 });
+    const isOwner = channel.name === `ticket-${user.id}`;
+    const isMod   = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
+    if (!isOwner && !isMod)
+        return interaction.reply({ content: '❌ Only the ticket owner or a moderator can close this.', flags: 64 });
 
     await interaction.reply({ content: '🔒 Closing ticket in 5 seconds...', flags: 64 });
 
@@ -88,11 +96,16 @@ if (!isOwner && !isMod)
 
 // ── /ticket add ───────────────────────────────────────────────────────────────
 async function add(interaction) {
-    const { guild, channel } = interaction;
+    const { guild, channel, member: executor } = interaction;
     const target = interaction.options.getUser('user');
 
     if (!channel.name.startsWith('ticket-'))
         return interaction.reply({ content: '❌ This is not a ticket channel.', flags: 64 });
+
+    const isMod   = executor.permissions.has(PermissionsBitField.Flags.ManageChannels);
+    const isOwner = channel.name === `ticket-${executor.user.id}`;
+    if (!isOwner && !isMod)
+        return interaction.reply({ content: '❌ Only the ticket owner or a moderator can add users.', flags: 64 });
 
     await channel.permissionOverwrites.edit(target.id, {
         ViewChannel:  true,
@@ -108,11 +121,10 @@ async function handleTicketClose(interaction) {
 
     if (!channel.name.startsWith('ticket-'))
         return interaction.reply({ content: '❌ Not a ticket channel.', flags: 64 });
-    // in both close() and handleTicketClose(), add this check after the channel.name check
-const isOwner = channel.name === `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-const isMod   = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
-if (!isOwner && !isMod)
-    return interaction.reply({ content: '❌ Only the ticket owner or a moderator can close this.', flags: 64 });
+    const isOwner = channel.name === `ticket-${user.id}`;
+    const isMod   = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
+    if (!isOwner && !isMod)
+        return interaction.reply({ content: '❌ Only the ticket owner or a moderator can close this.', flags: 64 });
 
     await interaction.reply({ content: '🔒 Closing ticket in 5 seconds...' });
 

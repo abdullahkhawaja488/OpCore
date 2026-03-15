@@ -258,7 +258,8 @@ async function boot(){
   if(!me||me.error){location.href='/login.html';return;}
   document.getElementById('uname').textContent=me.username;
   if(me.avatar)document.getElementById('av').src=`https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64`;
-  await Promise.all([loadServers(),loadAudit(),loadWarnings(),loadStats()]);
+  await loadServers();
+  await Promise.all([loadAudit(),loadWarnings(),loadStats()]);
   startLogs();
 }
 

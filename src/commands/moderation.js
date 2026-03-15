@@ -27,8 +27,14 @@ async function kick(interaction) {
     // ✅ fix: DM before kick so user is still in server when DM is sent
     if (!target.user.bot) {
         try {
-            const invite = await interaction.channel.createInvite({ maxAge: 604800, maxUses: 5, unique: true });
-            await user.send(`Hey <@${user.id}>,\nYou've been kicked from **${guild.name}**.\n**Reason:** ${reason}\nRejoin: ${invite.url}`);
+            const textChannel = guild.channels.cache.find(
+                c => c.isTextBased() && c.permissionsFor(guild.members.me)?.has('CreateInstantInvite')
+            );
+            const invite = textChannel
+                ? await textChannel.createInvite({ maxAge: 604800, maxUses: 5, unique: true }).catch(() => null)
+                : null;
+            const rejoin = invite ? `\nRejoin: ${invite.url}` : '';
+            await user.send(`Hey <@${user.id}>,\nYou've been kicked from **${guild.name}**.\n**Reason:** ${reason}${rejoin}`);
         } catch {
             await interaction.followUp({ content: `⚠️ Couldn't DM ${user.username} (DMs may be disabled).`, flags: 64 });
         }
@@ -124,6 +130,10 @@ async function timeout(interaction) {
     const target = await guild.members.fetch(user.id).catch(() => null);
     if (!target) return interaction.editReply('❌ User not found.');
 
+    const MAX_TIMEOUT = 28 * 24 * 60 * 60; // 28 days in seconds
+    if (duration < 1 || duration > MAX_TIMEOUT)
+        return interaction.editReply(`❌ Duration must be between 1 and ${MAX_TIMEOUT} seconds (28 days max).`);
+
     await target.timeout(duration * 1000, reason);
     await logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'tmt', target: user.username, reason: `${duration}s — ${reason}` });
     await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'tmt', target: user.username, reason: `${duration}s — ${reason}` });
@@ -155,19 +165,20 @@ async function cancelTimeout(interaction) {
 
 // ── clear ─────────────────────────────────────────────────────────────────────
 async function clear(interaction) {
+    await interaction.deferReply({ flags: 64 });
+
     const amount = interaction.options.getInteger('amount');
 
     if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages))
-        return interaction.reply({ content: '❌ You don\'t have permission to delete messages.', flags: 64 });
+        return interaction.editReply('❌ You don\'t have permission to delete messages.');
 
     if (amount < 1 || amount > 100)
-        return interaction.reply({ content: '❌ Please enter a number between 1 and 100.', flags: 64 });
+        return interaction.editReply('❌ Please enter a number between 1 and 100.');
 
-    // ✅ fix: report actual deleted count, not requested amount (old msgs >14d are skipped by Discord)
     const deleted = await interaction.channel.bulkDelete(amount, true);
     await logAction({ guildId: interaction.guild.id, guildName: interaction.guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'clear', reason: `${deleted.size} messages` });
     await logToChannel(interaction.client, { guildId: interaction.guild.id, guildName: interaction.guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'clear', reason: `${deleted.size} messages` });
-    await interaction.reply({ content: `🗑️ Deleted **${deleted.size}** messages.`, flags: 64 });
+    await interaction.editReply(`🗑️ Deleted **${deleted.size}** messages.`);
 }
 
 module.exports = { kick, ban, unban, timeout, cancelTimeout, clear };

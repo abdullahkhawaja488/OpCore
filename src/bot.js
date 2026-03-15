@@ -56,6 +56,7 @@ client.once('clientReady', async () => {
         }
     }
     await updateAllMemberCounts();
+    setInterval(updateAllMemberCounts, 10 * 60 * 1000);
 });
 
 // Register commands when the bot joins a new server
@@ -80,3 +81,29 @@ client.on('guildMemberAdd',    (member)      => handleMemberAdd(member));
 client.on('guildMemberRemove', (member)      => handleMemberRemove(member));
 
 client.login(process.env.DISCORD_TOKEN);
+
+// ── Dashboard status trigger watcher ─────────────────────────────────────────
+const fs   = require('fs');
+const path = require('path');
+const { ActivityType } = require('discord.js');
+
+const TRIGGER_PATH = path.join(__dirname, '../data/status_trigger.json');
+const activityMap  = {
+    playing:   ActivityType.Playing,
+    listening: ActivityType.Listening,
+    watching:  ActivityType.Watching,
+    competing: ActivityType.Competing,
+    custom:    ActivityType.Custom,
+};
+
+setInterval(() => {
+    if (!fs.existsSync(TRIGGER_PATH)) return;
+    try {
+        const { type, message } = JSON.parse(fs.readFileSync(TRIGGER_PATH, 'utf8'));
+        if (type && message && activityMap[type]) {
+            client.user?.setPresence({ activities: [{ name: message, type: activityMap[type] }] });
+            console.log(`[BOT] Status updated via dashboard: ${type} — ${message}`);
+        }
+        fs.unlinkSync(TRIGGER_PATH);
+    } catch { /* ignore malformed trigger */ }
+}, 5000);

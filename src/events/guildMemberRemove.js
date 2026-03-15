@@ -23,8 +23,8 @@ async function handleMemberRemove(member) {
 
         const embed = new EmbedBuilder()
             .setColor(0x99AAB5)
-            .setDescription(`**${member.user.tag}** has left the server. 👋`)
-            .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 512 }))
+            .setDescription(`**${member.user.username}** has left the server. 👋`)
+            .setThumbnail(member.user.displayAvatarURL({ size: 512 }))
             .setFooter({ text: `Members: ${member.guild.memberCount}` })
             .setTimestamp();
 
