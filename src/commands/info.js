@@ -45,13 +45,19 @@ async function banner(interaction) {
     await interaction.deferReply();
     const targetUser = interaction.options.getUser('user') || interaction.user;
     const fetched    = await interaction.client.users.fetch(targetUser.id, { force: true });
-    const bannerURL  = fetched.bannerURL({ size: 2048 });
+    const bannerURL  = fetched.bannerURL({ size: 1024 });
 
-    if (bannerURL) {
-        await interaction.editReply({ files: [bannerURL] });
-    } else {
-        await interaction.editReply({ content: 'This user has no banner.' });
+    if (!bannerURL) {
+        return interaction.editReply({ content: '❌ This user has no banner.' });
     }
+
+    const embed = new EmbedBuilder()
+        .setColor(0x2F3136)
+        .setAuthor({ name: fetched.username, iconURL: fetched.displayAvatarURL({ size: 64 }) })
+        .setImage(bannerURL)
+        .setFooter({ text: 'OpCore' });
+
+    await interaction.editReply({ embeds: [embed] });
 }
 
 module.exports = { userInfo, avatar, banner };
