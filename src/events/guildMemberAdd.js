@@ -12,10 +12,13 @@ async function handleMemberAdd(member) {
         );
     }
 
+    // Declare countChannel at function scope so it's accessible below
+    let countChannel = null;
     if (guildConf.MEMBER_COUNT_CHANNEL_ID) {
-        const countChannel = member.guild.channels.cache.get(guildConf.MEMBER_COUNT_CHANNEL_ID);
+        countChannel = member.guild.channels.cache.get(guildConf.MEMBER_COUNT_CHANNEL_ID);
         if (countChannel) {
-            await countChannel.setName(`Members: ${member.guild.memberCount}`).catch(err =>
+            const baseName = countChannel.name.split(':')[0] || 'Members';
+            await countChannel.setName(`${baseName}: ${member.guild.memberCount}`).catch(err =>
                 console.error('[WELCOME] Failed to update member count:', err.message)
             );
         }
@@ -31,10 +34,7 @@ async function handleMemberAdd(member) {
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 512 }))
             .setTimestamp();
 
-       const baseName = countChannel.name.split(':')[0] || 'Members';
-await countChannel.setName(`${baseName}: ${member.guild.memberCount}`).catch(err =>
-    console.error('[WELCOME] Failed to update member count:', err.message)
-);
+        await channel.send({ embeds: [embed] });
     }
 }
 

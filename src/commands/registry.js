@@ -53,8 +53,9 @@ const commands = [
         name: 'tmt',
         description: 'Timeout a user.',
         options: [
-            { type: 6, name: 'user',     description: 'User to timeout',         required: true },
-            { type: 4, name: 'duration', description: 'Duration in seconds',      required: true },
+            { type: 6, name: 'user',     description: 'User to timeout',    required: true },
+            { type: 4, name: 'duration', description: 'Duration in seconds', required: true },
+            { type: 3, name: 'reason',   description: 'Reason for timeout',  required: false },
         ],
     },
     {
