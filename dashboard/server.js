@@ -128,7 +128,12 @@ app.post('/api/servers/:guildId', requireAuth, async (req, res) => {
 
         if (!data[guildId]) return res.status(404).json({ error: 'Guild not found' });
 
-        const allowed = ['WELCOME_CHANNEL', 'BYE_CHANNEL', 'MEMBER_COUNT_CHANNEL_ID', 'RULES_CHANNEL', 'DEFAULT_ROLE_ID', 'LOG_CHANNEL'];
+        const allowed = [
+            'WELCOME_CHANNEL', 'BYE_CHANNEL', 'MEMBER_COUNT_CHANNEL_ID',
+            'RULES_CHANNEL', 'DEFAULT_ROLE_ID', 'LOG_CHANNEL',
+            'WELCOME_TITLE', 'WELCOME_DESCRIPTION', 'WELCOME_COLOR',
+            'BYE_TITLE', 'BYE_DESCRIPTION', 'BYE_COLOR',
+        ];
         for (const key of allowed) {
             if (req.body[key] !== undefined) {
                 data[guildId][key] = req.body[key];

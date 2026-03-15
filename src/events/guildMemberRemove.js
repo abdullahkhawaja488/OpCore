@@ -21,12 +21,28 @@ async function handleMemberRemove(member) {
         const channel = member.guild.channels.cache.get(guildConf.BYE_CHANNEL);
         if (!channel) return;
 
+        const title       = guildConf.BYE_TITLE       || null;
+        const description = (guildConf.BYE_DESCRIPTION || '**{username}** has left the server. 👋')
+            .replace('{user}',    member.user.id)
+            .replace('{username}', member.user.username)
+            .replace('{server}',  member.guild.name)
+            .replace('{count}',   member.guild.memberCount);
+        const color = guildConf.BYE_COLOR
+            ? parseInt(guildConf.BYE_COLOR.replace('#', ''), 16)
+            : 0x99AAB5;
+
         const embed = new EmbedBuilder()
-            .setColor(0x99AAB5)
-            .setDescription(`**${member.user.username}** has left the server. 👋`)
+            .setColor(color)
+            .setDescription(description)
             .setThumbnail(member.user.displayAvatarURL({ size: 512 }))
             .setFooter({ text: `Members: ${member.guild.memberCount}` })
             .setTimestamp();
+
+        if (title) embed.setTitle(title
+            .replace('{username}', member.user.username)
+            .replace('{server}',   member.guild.name)
+            .replace('{count}',    member.guild.memberCount)
+        );
 
         await channel.send({ embeds: [embed] }).catch(err =>
             console.error('[BYE] Failed to send goodbye message:', err.message)

@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Op Core</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%237c6dfa'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='14' fill='white'>OP</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Cabinet+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -160,6 +161,32 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
           <div class="form-grid" id="srv-fields"></div>
           <div style="display:flex;justify-content:flex-end;margin-top:16px">
             <button class="btn btn-accent" id="srv-save">Save Changes</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">🎉 Welcome Embed</div><span style="font-size:10px;color:var(--muted);font-family:var(--mono)">Variables: {user} {username} {server} {count}</span></div>
+        <div class="panel-body">
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 140px">
+            <div class="field" style="grid-column:1/3"><label>Title <span style="color:var(--muted)">(optional)</span></label><input id="w-title" placeholder="e.g. Welcome to {server}!"/></div>
+            <div class="field"><label>Color</label><input id="w-color" type="color" style="height:38px;padding:2px 4px;cursor:pointer"/></div>
+            <div class="field" style="grid-column:1/4"><label>Description</label><textarea id="w-desc" rows="3" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;border-radius:2px;width:100%;resize:vertical" placeholder="Welcome <@{user}> to **{server}**!"></textarea></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px">
+            <button class="btn btn-green" id="w-save">Save Welcome</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">👋 Goodbye Embed</div><span style="font-size:10px;color:var(--muted);font-family:var(--mono)">Variables: {username} {server} {count}</span></div>
+        <div class="panel-body">
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 140px">
+            <div class="field" style="grid-column:1/3"><label>Title <span style="color:var(--muted)">(optional)</span></label><input id="b-title" placeholder="e.g. Goodbye {username}"/></div>
+            <div class="field"><label>Color</label><input id="b-color" type="color" style="height:38px;padding:2px 4px;cursor:pointer"/></div>
+            <div class="field" style="grid-column:1/4"><label>Description</label><textarea id="b-desc" rows="3" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;border-radius:2px;width:100%;resize:vertical" placeholder="**{username}** has left the server. 👋"></textarea></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px">
+            <button class="btn btn-red" id="b-save">Save Goodbye</button>
           </div>
         </div>
       </div>
@@ -326,6 +353,17 @@ function openServer(guildId){
   document.getElementById('srv-fields').innerHTML=fields.map(f=>`
     <div class="field"><label>${f.label}</label><input data-key="${f.key}" value="${esc(conf[f.key]||'')}" placeholder="ID"/></div>
   `).join('');
+
+  // Populate welcome embed fields
+  document.getElementById('w-title').value  = conf.WELCOME_TITLE       || '';
+  document.getElementById('w-desc').value   = conf.WELCOME_DESCRIPTION || '';
+  document.getElementById('w-color').value  = conf.WELCOME_COLOR       || '#57F287';
+
+  // Populate bye embed fields
+  document.getElementById('b-title').value  = conf.BYE_TITLE           || '';
+  document.getElementById('b-desc').value   = conf.BYE_DESCRIPTION     || '';
+  document.getElementById('b-color').value  = conf.BYE_COLOR           || '#99AAB5';
+
   const wb=document.getElementById('srv-warn-body');
   const gw=warnings[guildId]||{};
   const wkeys=Object.keys(gw);
@@ -339,6 +377,30 @@ document.getElementById('srv-save').onclick=async()=>{
   document.querySelectorAll('#srv-fields input').forEach(i=>body[i.dataset.key]=i.value.trim());
   const r=await api(`/api/servers/${activeGuild}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(r?.ok){toast('Saved ✓');servers[activeGuild]={...servers[activeGuild],...body};}
+  else toast('Save failed',true);
+};
+
+document.getElementById('w-save').onclick=async()=>{
+  if(!activeGuild)return;
+  const body={
+    WELCOME_TITLE:       document.getElementById('w-title').value.trim(),
+    WELCOME_DESCRIPTION: document.getElementById('w-desc').value.trim(),
+    WELCOME_COLOR:       document.getElementById('w-color').value,
+  };
+  const r=await api(`/api/servers/${activeGuild}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r?.ok){toast('Welcome embed saved ✓');servers[activeGuild]={...servers[activeGuild],...body};}
+  else toast('Save failed',true);
+};
+
+document.getElementById('b-save').onclick=async()=>{
+  if(!activeGuild)return;
+  const body={
+    BYE_TITLE:       document.getElementById('b-title').value.trim(),
+    BYE_DESCRIPTION: document.getElementById('b-desc').value.trim(),
+    BYE_COLOR:       document.getElementById('b-color').value,
+  };
+  const r=await api(`/api/servers/${activeGuild}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r?.ok){toast('Goodbye embed saved ✓');servers[activeGuild]={...servers[activeGuild],...body};}
   else toast('Save failed',true);
 };
 
