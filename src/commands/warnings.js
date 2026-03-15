@@ -1,18 +1,20 @@
 const { EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { addWarning, getWarnings, clearWarnings } = require('../services/warnings');
 const { logAction } = require('../services/audit');
+const { logToChannel } = require('../services/logger');
 
 async function warn(interaction) {
+    await interaction.deferReply({ flags: 64 });
     const { options, guild, member: executor } = interaction;
     const user   = options.getUser('user');
     const reason = options.getString('reason');
 
-    if (!executor.permissions.has(PermissionsBitField.Flags.ModerateMembers))
-        return interaction.reply({ content: '❌ You don\'t have permission to warn members.', flags: 64 });
+      if (!executor.permissions.has(PermissionsBitField.Flags.ModerateMembers))
+        return interaction.editReply({ content: '❌ You don\'t have permission to warn members.' });
 
-    const warnings = addWarning(guild.id, user.id, reason, interaction.user.id);
+    const warnings = await  addWarning(guild.id, user.id, reason, interaction.user.id);
 
-    logAction({
+    await logAction({
         guildId:   guild.id,
         guildName: guild.name,
         userId:    interaction.user.id,
@@ -21,6 +23,7 @@ async function warn(interaction) {
         target:    user.username,
         reason,
     });
+    await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'warn', target: user.username, reason });
 
     const embed = new EmbedBuilder()
         .setColor('#faa61a')
@@ -33,7 +36,7 @@ async function warn(interaction) {
         .setFooter({ text: `Warned by ${interaction.user.username}` })
         .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
 
     // DM the user
     try {
@@ -43,7 +46,7 @@ async function warn(interaction) {
 
 async function warnings(interaction) {
     const user = interaction.options.getUser('user');
-    const list = getWarnings(interaction.guild.id, user.id);
+    const list = await getWarnings(interaction.guild.id, user.id);
 
     if (list.length === 0)
         return interaction.reply({ content: `✅ **${user.username}** has no warnings.`, flags: 64 });
@@ -66,9 +69,9 @@ async function clearwarn(interaction) {
     if (!executor.permissions.has(PermissionsBitField.Flags.ModerateMembers))
         return interaction.reply({ content: '❌ You don\'t have permission to clear warnings.', flags: 64 });
 
-    clearWarnings(guild.id, user.id);
+   await  clearWarnings(guild.id, user.id);
 
-    logAction({
+    await logAction({
         guildId:   guild.id,
         guildName: guild.name,
         userId:    interaction.user.id,
@@ -76,7 +79,7 @@ async function clearwarn(interaction) {
         command:   'clearwarn',
         target:    user.username,
     });
-
+await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'clearwarn', target: user.username });
     await interaction.reply({ content: `✅ Cleared all warnings for **${user.username}**.`, flags: 64 });
 }
 

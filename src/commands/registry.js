@@ -111,6 +111,7 @@ const commands = [
             { type: 7, name: 'member',  description: 'Member count channel', required: true },
             { type: 7, name: 'rules',   description: 'Rules channel',        required: true },
             { type: 8, name: 'role',    description: 'Default member role',  required: true },
+            { type: 7, name: 'log', description: 'Mod log channel', required: true },
             { type: 7, name: 'notify', description: 'Channel for YouTube notifications', required: true },
         ],
     },

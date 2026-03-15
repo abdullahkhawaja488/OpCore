@@ -11,16 +11,17 @@ A powerful, multi-server Discord bot — featuring moderation, warnings, ticket 
 - `/tmt`, `/ctmt` — timeout and cancel timeout
 - `/clear` — bulk delete up to 100 messages
 - `/warn`, `/warnings`, `/clearwarn` — warning system with DMs and audit trail
+- All mod actions logged to a dedicated Discord log channel per server
 
 **Ticket System**
 - `/ticket open` — creates a private support channel for the user
-- `/ticket close` — deletes the ticket channel after 5 seconds
+- `/ticket close` — deletes the ticket channel after 5 seconds (owner or mod only)
 - `/ticket add` — adds another user to the ticket
 
 **Server Management**
-- `/setup` — configure welcome, goodbye, rules, member count, and YouTube notify channels per server
-- `/role` — give or take roles from users
-- `/setstatus` — change the bot's activity status
+- `/setup` — configure welcome, goodbye, rules, member count, YouTube notify, and mod log channels per server
+- `/role` — give or take roles from users (owner only)
+- `/setstatus` — change the bot's activity status (owner only)
 
 **Info Commands**
 - `/info` — user profile, join dates, boost status
@@ -30,7 +31,7 @@ A powerful, multi-server Discord bot — featuring moderation, warnings, ticket 
 - `/banlist` — view all banned users
 
 **YouTube Notifier**
-- Polls a YouTube channel every hour for new uploads
+- Polls a configured YouTube channel every hour for new uploads
 - Posts to a configured channel per server
 - Persists seen video IDs via Upstash Redis — survives restarts and redeploys
 
@@ -51,7 +52,7 @@ A powerful, multi-server Discord bot — featuring moderation, warnings, ticket 
 - [Node.js](https://nodejs.org/) v20+
 - [Express](https://expressjs.com/) — dashboard backend
 - [Axios](https://axios-http.com/) — YouTube API & Upstash requests
-- [Upstash Redis](https://upstash.com/) — persistent storage for seen videos
+- [Upstash Redis](https://upstash.com/) — persistent storage for all data (config, audit, warnings, seen videos)
 - Discord OAuth2 — dashboard authentication
 
 ---
@@ -72,14 +73,15 @@ Copy `.env.example` to `.env` and fill in your values:
 |---|---|
 | `DISCORD_TOKEN` | Your bot token from Discord Dev Portal |
 | `CLIENT_ID` | Your bot's application ID |
-| `ABDULLAH` | Your Discord user ID (owner) |
+| `OWNER_ID` | Your Discord user ID (owner) |
 | `YOUTUBE_API_KEY` | Google Cloud YouTube Data API v3 key |
+| `YOUTUBE_CHANNEL_ID` | The YouTube channel ID to monitor for new uploads |
 | `DISCORD_CLIENT_SECRET` | OAuth2 client secret for the dashboard |
-| `DASHBOARD_REDIRECT_URI` | e.g. `http://localhost:4000/auth/callback` |
+| `DASHBOARD_REDIRECT_URI` | e.g. `https://yourdomain.com/auth/callback` |
 | `SESSION_SECRET` | Any long random string |
-| `PORT` | 4000 |
-| `UPSTASH_REDIS_REST_URL` | Upstash Redis URL for storing seen YouTube videos |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis token |
+| `DASHBOARD_PORT` | 4000 |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token |
 
 ### 3. Run
 ```bash
@@ -97,7 +99,7 @@ To use it:
 2. Add your redirect URI (e.g. `https://yourdomain.com/auth/callback`)
 3. Visit `http://localhost:4000` and sign in with Discord
 
-Only the owner (configured via `ABDULLAH` env var) can access the dashboard.
+Only the owner (configured via `OWNER_ID` env var) can access the dashboard.
 
 ---
 
@@ -115,7 +117,6 @@ This bot is designed to run on [Railway](https://railway.app).
 ---
 
 ## Project Structure
-
 ```
 OpCore/
 ├── index.js                     # Launcher — starts all processes
@@ -134,9 +135,10 @@ OpCore/
 │   │   ├── guildMemberAdd.js    # Welcome messages + role assign
 │   │   └── guildMemberRemove.js # Goodbye messages
 │   └── services/
-│       ├── config.js            # Read/write servers.json
-│       ├── audit.js             # Logs every moderation action
-│       ├── warnings.js          # Warning storage
+│       ├── config.js            # Read/write server config via Upstash Redis
+│       ├── audit.js             # Logs every moderation action via Upstash Redis
+│       ├── warnings.js          # Warning storage via Upstash Redis
+│       ├── logger.js            # Sends mod action embeds to Discord log channel
 │       └── youtubeNotifier.js   # YouTube upload polling
 ├── dashboard/
 │   ├── server.js                # Express server + Discord OAuth
@@ -144,7 +146,7 @@ OpCore/
 │       ├── index.html           # Dashboard UI
 │       └── login.html           # Login page
 └── data/
-    └── servers.json             # Per-guild configuration
+    └── dashboard.log            # Local dashboard log file
 ```
 
 ---

@@ -1,21 +1,34 @@
-const fs   = require('fs');
-const path = require('path');
+const axios = require('axios');
 
-const WARN_PATH = path.join(__dirname, '../../data/warnings.json');
+const URL   = process.env.UPSTASH_REDIS_REST_URL;
+const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-function readWarnings() {
-    if (!fs.existsSync(WARN_PATH)) return {};
-    const raw = fs.readFileSync(WARN_PATH, 'utf-8').trim();
-    if (!raw) return {};
-    return JSON.parse(raw);
+const headers = { Authorization: `Bearer ${TOKEN}` };
+
+async function readWarnings() {
+    try {
+        const res = await axios.get(`${URL}/get/warnings`, { headers });
+        const result = res.data.result;
+        if (!result) return {};
+        return JSON.parse(result);
+    } catch {
+        return {};
+    }
 }
 
-function saveWarnings(data) {
-    fs.writeFileSync(WARN_PATH, JSON.stringify(data, null, 2));
+async function saveWarnings(data) {
+    try {
+        await axios.post(`${URL}/set/warnings`,
+            JSON.stringify(JSON.stringify(data)),
+            { headers: { ...headers, 'Content-Type': 'application/json' } }
+        );
+    } catch (err) {
+        console.error('[WARNINGS] Failed to save warnings:', err.message);
+    }
 }
 
-function addWarning(guildId, userId, reason, moderatorId) {
-    const data = readWarnings();
+async function addWarning(guildId, userId, reason, moderatorId) {
+    const data = await readWarnings();
     if (!data[guildId]) data[guildId] = {};
     if (!data[guildId][userId]) data[guildId][userId] = [];
     data[guildId][userId].push({
@@ -24,20 +37,20 @@ function addWarning(guildId, userId, reason, moderatorId) {
         moderatorId,
         timestamp:   new Date().toISOString(),
     });
-    saveWarnings(data);
+    await saveWarnings(data);
     return data[guildId][userId];
 }
 
-function getWarnings(guildId, userId) {
-    const data = readWarnings();
+async function getWarnings(guildId, userId) {
+    const data = await readWarnings();
     return data[guildId]?.[userId] || [];
 }
 
-function clearWarnings(guildId, userId) {
-    const data = readWarnings();
+async function clearWarnings(guildId, userId) {
+    const data = await readWarnings();
     if (data[guildId]?.[userId]) {
         delete data[guildId][userId];
-        saveWarnings(data);
+        await saveWarnings(data);
     }
 }
 

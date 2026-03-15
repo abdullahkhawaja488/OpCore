@@ -1,5 +1,6 @@
 const { PermissionsBitField } = require('discord.js');
 const { logAction } = require('../services/audit');
+const { logToChannel } = require('../services/logger');
 // ── kick ──────────────────────────────────────────────────────────────────────
 async function kick(interaction) {
     await interaction.deferReply({ flags: 64 });
@@ -34,7 +35,8 @@ async function kick(interaction) {
     }
 
     await target.kick(reason);
-    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'kick', target: user.username, reason });
+    await logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'kick', target: user.username, reason });
+   await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'kick', target: user.username, reason });
     await interaction.editReply(`✅ **${user.username}** has been kicked.\n**Reason:** ${reason}`);
 }
 
@@ -67,7 +69,8 @@ async function ban(interaction) {
     }
 
     await guild.members.ban(user.id, { reason });
-    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'ban', target: user.username, reason });
+    await logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'ban', target: user.username, reason });
+    await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'ban', target: user.username, reason });
     await interaction.editReply(`✅ **${user.username}** has been banned.\n**Reason:** ${reason}`);
 }
 
@@ -93,8 +96,9 @@ async function unban(interaction) {
     const user = await interaction.client.users.fetch(userId).catch(() => null);
 
     await guild.bans.remove(userId);
-    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'unban', target: user?.username ?? userId });
-
+    // change to
+await logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'unban', target: user?.username ?? userId });
+await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'unban', target: user?.username ?? userId });
     if (user && !user.bot) {
         try {
             const invite = await interaction.channel.createInvite({ maxAge: 604800, maxUses: 5, unique: true });
@@ -122,7 +126,9 @@ async function timeout(interaction) {
     if (!target) return interaction.editReply('❌ User not found.');
 
     await target.timeout(duration * 1000, reason);
-    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'tmt', target: user.username, reason: `${duration}s — ${reason}` });
+    await logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'tmt', target: user.username, reason: `${duration}s — ${reason}` });
+    await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'tmt', target: user.username, reason: `${duration}s — ${reason}` });
+
     await interaction.editReply(`⏱️ **${user.username}** has been timed out for **${duration} seconds**.\n**Reason:** ${reason}`);
 }
 
@@ -143,7 +149,8 @@ async function cancelTimeout(interaction) {
     await target.timeout(null);
 
     // ✅ fix: added missing logAction call
-    logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'cancel_timeout', target: user.username });
+    await logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'cancel_timeout', target: user.username });
+    await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'cancel_timeout', target: user.username });
     await interaction.editReply(`✅ **${user.username}**'s timeout has been cancelled.`);
 }
 
@@ -159,7 +166,8 @@ async function clear(interaction) {
 
     // ✅ fix: report actual deleted count, not requested amount (old msgs >14d are skipped by Discord)
     const deleted = await interaction.channel.bulkDelete(amount, true);
-    logAction({ guildId: interaction.guild.id, guildName: interaction.guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'clear', reason: `${deleted.size} messages` });
+    await logAction({ guildId: interaction.guild.id, guildName: interaction.guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'clear', reason: `${deleted.size} messages` });
+    await logToChannel(interaction.client, { guildId: interaction.guild.id, guildName: interaction.guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'clear', reason: `${deleted.size} messages` });
     await interaction.reply({ content: `🗑️ Deleted **${deleted.size}** messages.`, flags: 64 });
 }
 

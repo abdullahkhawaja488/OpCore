@@ -3,12 +3,9 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const axios = require('axios');
 const path  = require('path');
 const { readConfig } = require('./config');
+const fs = require('fs');
 
-function loadConfig() {
-    return readConfig();
-}
-
-const YT_CHANNEL_ID   = 'UCP7WmQ_U4GB3K51Od9QvM0w';
+const YT_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const POLL_INTERVAL   = 60 * 60 * 1000; // 1 hour
@@ -66,7 +63,7 @@ async function checkYouTube() {
         if (!items?.length) return;
 
         const seen = await loadSeen();
-        const config = loadConfig();
+        const config = await readConfig();
         let updated = false;
 
         for (const item of items) {
@@ -108,5 +105,19 @@ client.once('clientReady', () => {
     checkYouTube();
     setInterval(checkYouTube, POLL_INTERVAL);
 });
+
+// add this anywhere after the client.once('clientReady') block
+const TRIGGER_PATH = path.join(__dirname, '../../data/yt_trigger');
+let lastTrigger = 0;
+setInterval(() => {
+    try {
+        const val = fs.readFileSync(TRIGGER_PATH, 'utf-8').trim();
+        if (val && Number(val) > lastTrigger) {
+            lastTrigger = Number(val);
+            console.log('[YT NOTIFIER] Manual trigger detected, checking now...');
+            checkYouTube();
+        }
+    } catch { /* file doesn't exist yet, ignore */ }
+}, 5000);
 
 client.login(process.env.DISCORD_TOKEN);

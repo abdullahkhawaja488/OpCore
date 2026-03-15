@@ -1,17 +1,30 @@
-const path = require('path');
-const fs   = require('fs');
+const axios = require('axios');
 
-const CONFIG_PATH = path.join(__dirname, '../../data/servers.json');
+const URL   = process.env.UPSTASH_REDIS_REST_URL;
+const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-function readConfig() {
-    if (!fs.existsSync(CONFIG_PATH)) return {};
-    const raw = fs.readFileSync(CONFIG_PATH, 'utf-8').trim();
-    if (!raw) return {};
-    return JSON.parse(raw);
+const headers = { Authorization: `Bearer ${TOKEN}` };
+
+async function readConfig() {
+    try {
+        const res = await axios.get(`${URL}/get/servers`, { headers });
+        const result = res.data.result;
+        if (!result) return {};
+        return JSON.parse(result);
+    } catch {
+        return {};
+    }
 }
 
-function saveConfig(data) {
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(data, null, 2));
+async function saveConfig(data) {
+    try {
+        await axios.post(`${URL}/set/servers`,
+            JSON.stringify(JSON.stringify(data)),
+            { headers: { ...headers, 'Content-Type': 'application/json' } }
+        );
+    } catch (err) {
+        console.error('[CONFIG] Failed to save config:', err.message);
+    }
 }
 
 module.exports = { readConfig, saveConfig };

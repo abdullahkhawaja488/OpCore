@@ -3,6 +3,7 @@ const {
     ButtonStyle, ChannelType, PermissionsBitField
 } = require('discord.js');
 const { logAction } = require('../services/audit');
+const { logToChannel } = require('../services/logger');
 
 // ── /ticket open ──────────────────────────────────────────────────────────────
 async function open(interaction) {
@@ -46,7 +47,7 @@ async function open(interaction) {
 
     await channel.send({ embeds: [embed], components: [row] });
 
-    logAction({
+    await logAction({
         guildId:   guild.id,
         guildName: guild.name,
         userId:    user.id,
@@ -54,7 +55,7 @@ async function open(interaction) {
         command:   'ticket open',
         reason,
     });
-
+ await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: user.id, username: user.username, command: 'ticket open', reason });
     await interaction.editReply(`✅ Ticket created: ${channel}`);
 }
 
@@ -64,10 +65,15 @@ async function close(interaction) {
 
     if (!channel.name.startsWith('ticket-'))
         return interaction.reply({ content: '❌ This is not a ticket channel.', flags: 64 });
+    // in both close() and handleTicketClose(), add this check after the channel.name check
+const isOwner = channel.name === `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+const isMod   = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
+if (!isOwner && !isMod)
+    return interaction.reply({ content: '❌ Only the ticket owner or a moderator can close this.', flags: 64 });
 
     await interaction.reply({ content: '🔒 Closing ticket in 5 seconds...', flags: 64 });
 
-    logAction({
+    await logAction({
         guildId:   guild.id,
         guildName: guild.name,
         userId:    user.id,
@@ -75,6 +81,7 @@ async function close(interaction) {
         command:   'ticket close',
         target:    channel.name,
     });
+    await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: user.id, username: user.username, command: 'ticket close', target: channel.name });
 
     setTimeout(() => channel.delete().catch(console.error), 5000);
 }
@@ -101,10 +108,15 @@ async function handleTicketClose(interaction) {
 
     if (!channel.name.startsWith('ticket-'))
         return interaction.reply({ content: '❌ Not a ticket channel.', flags: 64 });
+    // in both close() and handleTicketClose(), add this check after the channel.name check
+const isOwner = channel.name === `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+const isMod   = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
+if (!isOwner && !isMod)
+    return interaction.reply({ content: '❌ Only the ticket owner or a moderator can close this.', flags: 64 });
 
     await interaction.reply({ content: '🔒 Closing ticket in 5 seconds...' });
 
-    logAction({
+    await logAction({
         guildId:   guild.id,
         guildName: guild.name,
         userId:    user.id,
@@ -112,6 +124,7 @@ async function handleTicketClose(interaction) {
         command:   'ticket close (button)',
         target:    channel.name,
     });
+    await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: user.id, username: user.username, command: 'ticket close (button)', target: channel.name });
 
     setTimeout(() => channel.delete().catch(console.error), 5000);
 }

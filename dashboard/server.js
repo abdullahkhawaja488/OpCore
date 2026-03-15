@@ -4,18 +4,22 @@ const session      = require('express-session');
 const axios        = require('axios');
 const path         = require('path');
 const fs           = require('fs');
+const { readConfig, saveConfig } = require('../src/services/config');
+const { readAudit }              = require('../src/services/audit');
+const { readWarnings }           = require('../src/services/warnings');
 
 const app  = express();
 const PORT = process.env.DASHBOARD_PORT || 4000;
 
-const OWNER_ID       = process.env.ABDULLAH;
-const CLIENT_ID      = process.env.CLIENT_ID;
-const CLIENT_SECRET  = process.env.DISCORD_CLIENT_SECRET;
-const REDIRECT_URI   = process.env.DASHBOARD_REDIRECT_URI || `http://localhost:${PORT}/auth/callback`;
-const SERVERS_PATH   = path.join(__dirname, '../data/servers.json');
-const LOG_PATH       = path.join(__dirname, '../data/dashboard.log');
-const AUDIT_PATH    = path.join(__dirname, '../data/audit.json');
-const WARNINGS_PATH = path.join(__dirname, '../data/warnings.json');
+const OWNER_ID      = process.env.OWNER_ID;
+const CLIENT_ID     = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const REDIRECT_URI  = process.env.DASHBOARD_REDIRECT_URI || `http://localhost:${PORT}/auth/callback`;
+const LOG_PATH      = path.join(__dirname, '../data/dashboard.log');
+
+// ── Ensure data/ directory exists ─────────────────────────────────────────────
+const DATA_DIR = path.join(__dirname, '../data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 // ── In-memory log ring buffer (last 200 lines) ────────────────────────────────
 const logs = [];
@@ -23,13 +27,7 @@ function pushLog(level, msg) {
     const entry = { time: new Date().toISOString(), level, msg };
     logs.push(entry);
     if (logs.length > 200) logs.shift();
-    fs.appendFileSync(LOG_PATH, JSON.stringify(entry) + '\n');
-}
-function readJSON(p) {
-    if (!fs.existsSync(p)) return null;
-    const raw = fs.readFileSync(p, 'utf-8').trim();
-    if (!raw) return null;
-    return JSON.parse(raw);
+    try { fs.appendFileSync(LOG_PATH, JSON.stringify(entry) + '\n'); } catch { /* ignore */ }
 }
 
 // Intercept console for log capture
@@ -113,25 +111,22 @@ app.get('/auth/me', (req, res) => {
 });
 
 // ── API: Servers ──────────────────────────────────────────────────────────────
-app.get('/api/servers', requireAuth, (req, res) => {
+app.get('/api/servers', requireAuth, async (req, res) => {
     try {
-        const raw  = fs.readFileSync(SERVERS_PATH, 'utf-8').trim();
-        const data = raw ? JSON.parse(raw) : {};
+        const data = await readConfig();
         res.json(data);
-    } catch {
-        res.json({});
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-app.post('/api/servers/:guildId', requireAuth, (req, res) => {
+app.post('/api/servers/:guildId', requireAuth, async (req, res) => {
     try {
-        const raw    = fs.readFileSync(SERVERS_PATH, 'utf-8').trim();
-        const data   = raw ? JSON.parse(raw) : {};
+        const data        = await readConfig();
         const { guildId } = req.params;
 
         if (!data[guildId]) return res.status(404).json({ error: 'Guild not found' });
 
-        // Only allow updating safe fields
         const allowed = ['WELCOME_CHANNEL', 'BYE_CHANNEL', 'MEMBER_COUNT_CHANNEL_ID', 'RULES_CHANNEL', 'DEFAULT_ROLE_ID', 'NOTIFY_CHANNEL'];
         for (const key of allowed) {
             if (req.body[key] !== undefined) {
@@ -140,7 +135,7 @@ app.post('/api/servers/:guildId', requireAuth, (req, res) => {
         }
 
         data[guildId].updatedAt = new Date().toISOString();
-        fs.writeFileSync(SERVERS_PATH, JSON.stringify(data, null, 2));
+        await saveConfig(data);
         console.log(`[DASHBOARD] Updated config for guild ${guildId}`);
         res.json({ ok: true });
     } catch (err) {
@@ -160,10 +155,8 @@ app.get('/api/logs/stream', requireAuth, (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    // Send existing logs first
     res.write(`data: ${JSON.stringify({ type: 'init', logs })}\n\n`);
 
-    // Poll for new logs every second
     let lastLen = logs.length;
     const interval = setInterval(() => {
         if (logs.length > lastLen) {
@@ -177,40 +170,52 @@ app.get('/api/logs/stream', requireAuth, (req, res) => {
 });
 
 // ── API: Trigger YT check ─────────────────────────────────────────────────────
-app.post('/api/yt/check', requireAuth, async (req, res) => {
-    console.log('[DASHBOARD] Manual YT check triggered by Abdullah');
-    // Signal the YT notifier by touching a trigger file
+app.post('/api/yt/check', requireAuth, (req, res) => {
+    console.log('[DASHBOARD] Manual YT check triggered');
     const triggerPath = path.join(__dirname, '../data/yt_trigger');
     fs.writeFileSync(triggerPath, Date.now().toString());
     res.json({ ok: true, message: 'YT check triggered' });
 });
 
 // ── API: Audit log ────────────────────────────────────────────────────────────
-app.get('/api/audit', requireAuth, (req, res) => {
-    const data = readJSON(AUDIT_PATH) || [];
-    const { guild, limit = 200 } = req.query;
-    const filtered = guild ? data.filter(e => e.guildId === guild) : data;
-    res.json(filtered.slice(0, parseInt(limit)));
+app.get('/api/audit', requireAuth, async (req, res) => {
+    try {
+        const data = await readAudit();
+        const { guild, limit = 200 } = req.query;
+        const filtered = guild ? data.filter(e => e.guildId === guild) : data;
+        res.json(filtered.slice(0, parseInt(limit)));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ── API: Warnings ─────────────────────────────────────────────────────────────
-app.get('/api/warnings', requireAuth, (req, res) => {
-    res.json(readJSON(WARNINGS_PATH) || {});
+app.get('/api/warnings', requireAuth, async (req, res) => {
+    try {
+        const data = await readWarnings();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ── API: Stats ────────────────────────────────────────────────────────────────
-app.get('/api/stats', requireAuth, (req, res) => {
-    const servers  = readJSON(SERVERS_PATH)  || {};
-    const audit    = readJSON(AUDIT_PATH)    || [];
-    const warnings = readJSON(WARNINGS_PATH) || {};
-    const totalWarnings = Object.values(warnings).reduce((a, g) =>
-        a + Object.values(g).reduce((b, u) => b + u.length, 0), 0);
-    res.json({
-        serverCount:   Object.keys(servers).length,
-        auditCount:    audit.length,
-        totalWarnings,
-        logCount:      logs.length,
-    });
+app.get('/api/stats', requireAuth, async (req, res) => {
+    try {
+        const servers  = await readConfig();
+        const audit    = await readAudit();
+        const warnings = await readWarnings();
+        const totalWarnings = Object.values(warnings).reduce((a, g) =>
+            a + Object.values(g).reduce((b, u) => b + u.length, 0), 0);
+        res.json({
+            serverCount:   Object.keys(servers).length,
+            auditCount:    audit.length,
+            totalWarnings,
+            logCount:      logs.length,
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ── API: Set bot status ───────────────────────────────────────────────────────

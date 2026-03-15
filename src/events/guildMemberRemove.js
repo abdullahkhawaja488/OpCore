@@ -2,7 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 const { readConfig } = require('../services/config');
 
 async function handleMemberRemove(member) {
-    const config    = readConfig();
+    const config    = await readConfig();
     const guildConf = config[member.guild.id];
     if (!guildConf) return;
 
@@ -28,9 +28,10 @@ async function handleMemberRemove(member) {
             .setFooter({ text: `Members: ${member.guild.memberCount}` })
             .setTimestamp();
 
-        await channel.send({ embeds: [embed] }).catch(err =>
-            console.error('[BYE] Failed to send goodbye message:', err.message)
-        );
+        const baseName = countChannel.name.split(':')[0] || 'Members';
+await countChannel.setName(`${baseName}: ${member.guild.memberCount}`).catch(err =>
+    console.error('[BYE] Failed to update member count:', err.message)
+);
     }
 }
 

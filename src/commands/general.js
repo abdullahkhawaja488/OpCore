@@ -5,7 +5,7 @@ async function ping(interaction) {
 }
 
 async function help(interaction) {
-    await interaction.reply({ content: 'Contact: <@1207996343860068353>', flags: 64 });
+    await interaction.reply({ content: 'Contact Staff!', flags: 64 });
 }
 
 async function links(client, interaction) {
@@ -30,7 +30,8 @@ async function server(client, interaction) {
     const totalRoles    = guild.roles.cache.size;
     const serverOwner   = await guild.fetchOwner();
     const ownerName     = serverOwner.displayName || serverOwner.user.username;
-    const adminCount    = guild.members.cache.filter(m => m.permissions.has(PermissionFlagsBits.Administrator)).size;
+    await guild.members.fetch();
+    const adminCount = guild.members.cache.filter(m => m.permissions.has(PermissionFlagsBits.Administrator)).size;
     const latency       = Date.now() - interaction.createdTimestamp;
     const apiLatency    = Math.round(client.ws.ping);
 
@@ -54,7 +55,8 @@ async function server(client, interaction) {
 }
 
 async function banlist(interaction) {
-    const bans = await interaction.guild.bans.fetch();
+    const bans = await interaction.guild.bans.fetch({ limit: 1000 });
+    if (bans.size === 1000) await interaction.followUp({ content: '⚠️ Only showing first 1000 bans.', flags: 64 }).catch(() => {});
 
     if (bans.size === 0)
         return interaction.reply({ content: 'No banned users in this server.', flags: 64 });

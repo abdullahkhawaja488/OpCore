@@ -1,7 +1,7 @@
 const { ActivityType } = require('discord.js');
 const { readConfig, saveConfig } = require('../services/config');
 
-const isOwner = (userId) => userId === process.env.ABDULLAH;
+const isOwner = (userId) => userId === process.env.OWNER_ID;
 
 // ── role ──────────────────────────────────────────────────────────────────────
 async function role(interaction) {
@@ -43,7 +43,7 @@ async function setStatus(client, interaction) {
     const status = interaction.options.getString('message');
 
     const activityMap = {
-        playing:   ActivityType.Streaming,
+        playing:   ActivityType.Playing,
         listening: ActivityType.Listening,
         watching:  ActivityType.Watching,
         competing: ActivityType.Competing,
@@ -70,22 +70,24 @@ async function setup(interaction) {
     const rulesChannel   = options.getChannel('rules');
     const role           = options.getRole('role');
     const notifyChannel = options.getChannel('notify');
+    const logChannel     = options.getChannel('log');
 
-    const config = readConfig();
+    const config = await readConfig();
 
     config[guild.id] = {
-        serverName:              guild.name,
-        WELCOME_CHANNEL:         welcomeChannel.id,
-        BYE_CHANNEL:             byeChannel.id,
-        MEMBER_COUNT_CHANNEL_ID: memberChannel.id,
-        RULES_CHANNEL:           rulesChannel.id,
-        NOTIFY_CHANNEL: notifyChannel.id,
-        DEFAULT_ROLE_ID:         role.id,
-        savedBy:                 user.id,
-        savedAt:                 new Date().toISOString(),
-    };
+    serverName:              guild.name,
+    WELCOME_CHANNEL:         welcomeChannel?.id || null,
+    BYE_CHANNEL:             byeChannel?.id     || null,
+    MEMBER_COUNT_CHANNEL_ID: memberChannel?.id  || null,
+    RULES_CHANNEL:           rulesChannel?.id   || null,
+    NOTIFY_CHANNEL:          notifyChannel?.id  || null,
+    LOG_CHANNEL:             logChannel?.id     || null,
+    DEFAULT_ROLE_ID:         role?.id           || null,
+    savedBy:                 user.id,
+    savedAt:                 new Date().toISOString(),
+};
 
-    saveConfig(config);
+    await saveConfig(config);
 
     console.log(`[SETUP] Guild ${guild.id} (${guild.name}) configured by ${user.username}`);
     await interaction.reply({ content: '✅ Setup complete! Configuration saved.', flags: 64 });

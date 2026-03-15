@@ -21,16 +21,17 @@ const client = new Client({
 });
 // ── Member count update on startup + every 10 mins ────────────────────────
 async function updateAllMemberCounts() {
-    const config = readConfig();
+    const config = await readConfig();
     for (const [guildId, conf] of Object.entries(config)) {
         if (!conf.MEMBER_COUNT_CHANNEL_ID) continue;
         const guild = client.guilds.cache.get(guildId);
         if (!guild) continue;
         const channel = guild.channels.cache.get(conf.MEMBER_COUNT_CHANNEL_ID);
         if (!channel) continue;
-        await channel.setName(`Members: ${guild.memberCount}`).catch(err =>
-            console.error(`[BOT] Member count update failed for ${guild.name}:`, err.message)
-        );
+       const baseName = channel.name.split(':')[0] || 'Members';
+await channel.setName(`${baseName}: ${guild.memberCount}`).catch(err =>
+    console.error(`[BOT] Member count update failed for ${guild.name}:`, err.message)
+);
     }
 }
 
@@ -55,7 +56,7 @@ client.once('clientReady', async () => {
             console.error(`[BOT] Failed for ${guild.name}:`, err.message);
         }
     }
-    updateAllMemberCounts();
+    await updateAllMemberCounts();
 });
 
 // Register commands when the bot joins a new server
