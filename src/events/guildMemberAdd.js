@@ -31,10 +31,9 @@ async function handleMemberAdd(member) {
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 512 }))
             .setTimestamp();
 
-       const baseName = countChannel.name.split(':')[0] || 'Members';
-await countChannel.setName(`${baseName}: ${member.guild.memberCount}`).catch(err =>
-    console.error('[WELCOME] Failed to update member count:', err.message)
-);
+        await channel.send({ embeds: [embed] }).catch(err =>
+            console.error('[WELCOME] Failed to send welcome message:', err.message)
+        );
     }
 }
 

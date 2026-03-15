@@ -191,6 +191,9 @@
   } else if (err === 'oauth_failed') {
     el.textContent = '// AUTH ERROR — Try again.';
     el.classList.add('show');
+  } else if (err === 'no_code') {
+    el.textContent = '// AUTH ERROR — No code returned from Discord. Try again.';
+    el.classList.add('show');
   }
 </script>
 </body>

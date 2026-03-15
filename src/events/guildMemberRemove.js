@@ -28,10 +28,9 @@ async function handleMemberRemove(member) {
             .setFooter({ text: `Members: ${member.guild.memberCount}` })
             .setTimestamp();
 
-        const baseName = countChannel.name.split(':')[0] || 'Members';
-await countChannel.setName(`${baseName}: ${member.guild.memberCount}`).catch(err =>
-    console.error('[BYE] Failed to update member count:', err.message)
-);
+        await channel.send({ embeds: [embed] }).catch(err =>
+            console.error('[BYE] Failed to send goodbye message:', err.message)
+        );
     }
 }
 

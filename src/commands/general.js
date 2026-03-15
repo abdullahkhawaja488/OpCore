@@ -56,10 +56,11 @@ async function server(client, interaction) {
 
 async function banlist(interaction) {
     const bans = await interaction.guild.bans.fetch({ limit: 1000 });
-    if (bans.size === 1000) await interaction.followUp({ content: '⚠️ Only showing first 1000 bans.', flags: 64 }).catch(() => {});
 
     if (bans.size === 0)
         return interaction.reply({ content: 'No banned users in this server.', flags: 64 });
+
+    if (bans.size === 1000) await interaction.followUp({ content: '⚠️ Only showing first 1000 bans.', flags: 64 }).catch(() => {});
 
     let description = '';
     bans.forEach(({ user, reason }) => {

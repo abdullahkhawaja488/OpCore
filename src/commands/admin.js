@@ -62,6 +62,8 @@ async function setup(interaction) {
     if (!isOwner(interaction.user.id))
         return interaction.reply({ content: '❌ You are not authorized to use this command.', flags: 64 });
 
+    await interaction.deferReply({ flags: 64 });
+
     const { options, guild, user } = interaction;
 
     const welcomeChannel = options.getChannel('welcome');
@@ -88,7 +90,7 @@ async function setup(interaction) {
     await saveConfig(config);
 
     console.log(`[SETUP] Guild ${guild.id} (${guild.name}) configured by ${user.username}`);
-    await interaction.reply({ content: '✅ Setup complete! Configuration saved.', flags: 64 });
+    await interaction.editReply({ content: '✅ Setup complete! Configuration saved.' });
 }
 
 module.exports = { role, setStatus, setup };

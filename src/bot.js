@@ -28,10 +28,9 @@ async function updateAllMemberCounts() {
         if (!guild) continue;
         const channel = guild.channels.cache.get(conf.MEMBER_COUNT_CHANNEL_ID);
         if (!channel) continue;
-       const baseName = channel.name.split(':')[0] || 'Members';
-await channel.setName(`${baseName}: ${guild.memberCount}`).catch(err =>
-    console.error(`[BOT] Member count update failed for ${guild.name}:`, err.message)
-);
+        await channel.setName(`Members: ${guild.memberCount}`).catch(err =>
+            console.error(`[BOT] Member count update failed for ${guild.name}:`, err.message)
+        );
     }
 }
 
