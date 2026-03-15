@@ -19,7 +19,7 @@ async function readConfig() {
 async function saveConfig(data) {
     try {
         await axios.post(`${URL}/set/servers`,
-            JSON.stringify(data),
+            JSON.stringify(JSON.stringify(data)),
             { headers: { ...headers, 'Content-Type': 'application/json' } }
         );
     } catch (err) {

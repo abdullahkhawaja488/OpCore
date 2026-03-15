@@ -20,7 +20,7 @@ async function readAudit() {
 async function saveAudit(entries) {
     try {
         await axios.post(`${URL}/set/audit`,
-            JSON.stringify(entries),
+            JSON.stringify(JSON.stringify(entries)),
             { headers: { ...headers, 'Content-Type': 'application/json' } }
         );
     } catch (err) {

@@ -96,8 +96,7 @@ async function unban(interaction) {
     const user = await interaction.client.users.fetch(userId).catch(() => null);
 
     await guild.bans.remove(userId);
-    // change to
-await logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'unban', target: user?.username ?? userId });
+    await logAction({ guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'unban', target: user?.username ?? userId });
 await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: interaction.user.id, username: interaction.user.username, command: 'unban', target: user?.username ?? userId });
     if (user && !user.bot) {
         try {

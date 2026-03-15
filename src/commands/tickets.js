@@ -55,7 +55,7 @@ async function open(interaction) {
         command:   'ticket open',
         reason,
     });
- await logToChannel(interaction.client, { guildId: guild.id, guildName: guild.name, userId: user.id, username: user.username, command: 'ticket open', reason });
+
     await interaction.editReply(`✅ Ticket created: ${channel}`);
 }
 

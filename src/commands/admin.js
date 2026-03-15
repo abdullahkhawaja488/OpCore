@@ -69,23 +69,21 @@ async function setup(interaction) {
     const memberChannel  = options.getChannel('member');
     const rulesChannel   = options.getChannel('rules');
     const role           = options.getRole('role');
-    const notifyChannel = options.getChannel('notify');
     const logChannel     = options.getChannel('log');
 
     const config = await readConfig();
 
     config[guild.id] = {
-    serverName:              guild.name,
-    WELCOME_CHANNEL:         welcomeChannel?.id || null,
-    BYE_CHANNEL:             byeChannel?.id     || null,
-    MEMBER_COUNT_CHANNEL_ID: memberChannel?.id  || null,
-    RULES_CHANNEL:           rulesChannel?.id   || null,
-    NOTIFY_CHANNEL:          notifyChannel?.id  || null,
-    LOG_CHANNEL:             logChannel?.id     || null,
-    DEFAULT_ROLE_ID:         role?.id           || null,
-    savedBy:                 user.id,
-    savedAt:                 new Date().toISOString(),
-};
+        serverName:              guild.name,
+        WELCOME_CHANNEL:         welcomeChannel?.id || null,
+        BYE_CHANNEL:             byeChannel?.id     || null,
+        MEMBER_COUNT_CHANNEL_ID: memberChannel?.id  || null,
+        RULES_CHANNEL:           rulesChannel?.id   || null,
+        LOG_CHANNEL:             logChannel?.id     || null,
+        DEFAULT_ROLE_ID:         role?.id           || null,
+        savedBy:                 user.id,
+        savedAt:                 new Date().toISOString(),
+    };
 
     await saveConfig(config);
 

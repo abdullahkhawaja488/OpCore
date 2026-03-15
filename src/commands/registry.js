@@ -53,9 +53,8 @@ const commands = [
         name: 'tmt',
         description: 'Timeout a user.',
         options: [
-            { type: 6, name: 'user',     description: 'User to timeout',    required: true },
-            { type: 4, name: 'duration', description: 'Duration in seconds', required: true },
-            { type: 3, name: 'reason',   description: 'Reason for timeout',  required: false },
+            { type: 6, name: 'user',     description: 'User to timeout',         required: true },
+            { type: 4, name: 'duration', description: 'Duration in seconds',      required: true },
         ],
     },
     {
@@ -112,8 +111,7 @@ const commands = [
             { type: 7, name: 'member',  description: 'Member count channel', required: true },
             { type: 7, name: 'rules',   description: 'Rules channel',        required: true },
             { type: 8, name: 'role',    description: 'Default member role',  required: true },
-            { type: 7, name: 'log', description: 'Mod log channel', required: true },
-            { type: 7, name: 'notify', description: 'Channel for YouTube notifications', required: true },
+            { type: 7, name: 'log',     description: 'Mod log channel',      required: true },
         ],
     },
     // ── Warnings ──────────────────────────────────────────────────────────────

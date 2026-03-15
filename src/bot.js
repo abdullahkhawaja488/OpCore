@@ -2,10 +2,8 @@ require('dotenv').config();
 const { readConfig } = require('./services/config');
 const {
     Client, GatewayIntentBits, Partials,
-    REST, Routes, ActivityType
+    REST, Routes
 } = require('discord.js');
-const fs   = require('fs');
-const path = require('path');
 
 const { handleInteraction } = require('./commands/handler');
 const { handleMemberAdd }    = require('./events/guildMemberAdd');
@@ -21,8 +19,7 @@ const client = new Client({
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
-
-// ── Member count update on startup + every 10 mins ────────────────────────────
+// ── Member count update on startup + every 10 mins ────────────────────────
 async function updateAllMemberCounts() {
     const config = await readConfig();
     for (const [guildId, conf] of Object.entries(config)) {
@@ -31,20 +28,23 @@ async function updateAllMemberCounts() {
         if (!guild) continue;
         const channel = guild.channels.cache.get(conf.MEMBER_COUNT_CHANNEL_ID);
         if (!channel) continue;
-        const baseName = channel.name.split(':')[0] || 'Members';
-        await channel.setName(`${baseName}: ${guild.memberCount}`).catch(err =>
-            console.error(`[BOT] Member count update failed for ${guild.name}:`, err.message)
-        );
+       const baseName = channel.name.split(':')[0] || 'Members';
+await channel.setName(`${baseName}: ${guild.memberCount}`).catch(err =>
+    console.error(`[BOT] Member count update failed for ${guild.name}:`, err.message)
+);
     }
 }
 
-// ── Register slash commands on ready ──────────────────────────────────────────
+
+// ── Register slash commands on ready ─────────────────────────────────────────
 client.once('clientReady', async () => {
+
     console.log(`[BOT] Logged in as ${client.user.tag}`);
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     const commands = getAllCommands();
 
+    // Register to every guild the bot is currently in
     for (const guild of client.guilds.cache.values()) {
         try {
             await rest.put(
@@ -56,36 +56,7 @@ client.once('clientReady', async () => {
             console.error(`[BOT] Failed for ${guild.name}:`, err.message);
         }
     }
-
     await updateAllMemberCounts();
-    setInterval(updateAllMemberCounts, 10 * 60 * 1000);
-
-    // ── Poll for dashboard status trigger ─────────────────────────────────────
-    const STATUS_TRIGGER = path.join(__dirname, '../data/status_trigger.json');
-    const activityMap = {
-        playing:   ActivityType.Playing,
-        listening: ActivityType.Listening,
-        watching:  ActivityType.Watching,
-        competing: ActivityType.Competing,
-        custom:    ActivityType.Custom,
-    };
-
-    let lastStatusMtime = 0;
-    setInterval(() => {
-        try {
-            const stat = fs.statSync(STATUS_TRIGGER);
-            if (stat.mtimeMs > lastStatusMtime) {
-                lastStatusMtime = stat.mtimeMs;
-                const { type, message } = JSON.parse(fs.readFileSync(STATUS_TRIGGER, 'utf-8'));
-                if (type && message && activityMap[type]) {
-                    client.user.setPresence({
-                        activities: [{ name: message, type: activityMap[type] }],
-                    });
-                    console.log(`[BOT] Status updated via dashboard: ${type} - ${message}`);
-                }
-            }
-        } catch { /* file doesn't exist yet, ignore */ }
-    }, 5000);
 });
 
 // Register commands when the bot joins a new server
@@ -101,6 +72,7 @@ client.on('guildCreate', async (guild) => {
     } catch (err) {
         console.error(`[BOT] Failed to register for ${guild.name}:`, err.message);
     }
+    
 });
 
 // ── Events ────────────────────────────────────────────────────────────────────

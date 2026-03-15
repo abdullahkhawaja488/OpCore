@@ -1,6 +1,6 @@
 # OpCore 🤖
 
-A powerful, multi-server Discord bot — featuring moderation, warnings, ticket system, YouTube notifications, and a private web dashboard.
+A powerful, multi-server Discord bot — featuring moderation, warnings, ticket system, and a private web dashboard.
 
 ---
 
@@ -11,17 +11,17 @@ A powerful, multi-server Discord bot — featuring moderation, warnings, ticket 
 - `/tmt`, `/ctmt` — timeout and cancel timeout
 - `/clear` — bulk delete up to 100 messages
 - `/warn`, `/warnings`, `/clearwarn` — warning system with DMs and audit trail
-- All mod actions logged to a dedicated Discord log channel per server
+- All moderation actions are automatically logged to a configured log channel
 
 **Ticket System**
 - `/ticket open` — creates a private support channel for the user
-- `/ticket close` — deletes the ticket channel after 5 seconds (owner or mod only)
+- `/ticket close` — deletes the ticket channel after 5 seconds
 - `/ticket add` — adds another user to the ticket
 
 **Server Management**
-- `/setup` — configure welcome, goodbye, rules, member count, YouTube notify, and mod log channels per server
-- `/role` — give or take roles from users (owner only)
-- `/setstatus` — change the bot's activity status (owner only)
+- `/setup` — configure welcome, goodbye, rules, member count, and mod log channels per server
+- `/role` — give or take roles from users
+- `/setstatus` — change the bot's activity status
 
 **Info Commands**
 - `/info` — user profile, join dates, boost status
@@ -30,11 +30,6 @@ A powerful, multi-server Discord bot — featuring moderation, warnings, ticket 
 - `/server` — server stats including latency, roles, channels
 - `/banlist` — view all banned users
 
-**YouTube Notifier**
-- Polls a configured YouTube channel every hour for new uploads
-- Posts to a configured channel per server
-- Persists seen video IDs via Upstash Redis — survives restarts and redeploys
-
 **Web Dashboard** *(Owner only)*
 - Login with Discord OAuth2
 - View and edit per-server configurations
@@ -42,7 +37,6 @@ A powerful, multi-server Discord bot — featuring moderation, warnings, ticket 
 - Warnings viewer across all servers
 - Live log stream
 - Bot status control
-- Manually trigger a YouTube check
 
 ---
 
@@ -51,8 +45,8 @@ A powerful, multi-server Discord bot — featuring moderation, warnings, ticket 
 - [Discord.js](https://discord.js.org/) v14
 - [Node.js](https://nodejs.org/) v20+
 - [Express](https://expressjs.com/) — dashboard backend
-- [Axios](https://axios-http.com/) — YouTube API & Upstash requests
-- [Upstash Redis](https://upstash.com/) — persistent storage for all data (config, audit, warnings, seen videos)
+- [Axios](https://axios-http.com/) — Upstash requests
+- [Upstash Redis](https://upstash.com/) — persistent config & warning storage
 - Discord OAuth2 — dashboard authentication
 
 ---
@@ -74,19 +68,23 @@ Copy `.env.example` to `.env` and fill in your values:
 | `DISCORD_TOKEN` | Your bot token from Discord Dev Portal |
 | `CLIENT_ID` | Your bot's application ID |
 | `OWNER_ID` | Your Discord user ID (owner) |
-| `YOUTUBE_API_KEY` | Google Cloud YouTube Data API v3 key |
-| `YOUTUBE_CHANNEL_ID` | The YouTube channel ID to monitor for new uploads |
 | `DISCORD_CLIENT_SECRET` | OAuth2 client secret for the dashboard |
-| `DASHBOARD_REDIRECT_URI` | e.g. `https://yourdomain.com/auth/callback` |
+| `DASHBOARD_REDIRECT_URI` | e.g. `http://localhost:4000/auth/callback` |
 | `SESSION_SECRET` | Any long random string |
 | `DASHBOARD_PORT` | 4000 |
-| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis URL |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis token |
 
 ### 3. Run
 ```bash
 node index.js
 ```
+
+---
+
+## Mod Log Channel
+
+Run `/setup` and pass your desired log channel to the **log** option. Every moderation action (kick, ban, unban, timeout, clear, warn, etc.) will be posted as a rich embed in that channel, showing the moderator, target, and reason.
 
 ---
 
@@ -117,6 +115,7 @@ This bot is designed to run on [Railway](https://railway.app).
 ---
 
 ## Project Structure
+
 ```
 OpCore/
 ├── index.js                     # Launcher — starts all processes
@@ -135,18 +134,17 @@ OpCore/
 │   │   ├── guildMemberAdd.js    # Welcome messages + role assign
 │   │   └── guildMemberRemove.js # Goodbye messages
 │   └── services/
-│       ├── config.js            # Read/write server config via Upstash Redis
-│       ├── audit.js             # Logs every moderation action via Upstash Redis
-│       ├── warnings.js          # Warning storage via Upstash Redis
-│       ├── logger.js            # Sends mod action embeds to Discord log channel
-│       └── youtubeNotifier.js   # YouTube upload polling
+│       ├── config.js            # Read/write config via Upstash Redis
+│       ├── audit.js             # Logs every moderation action
+│       ├── logger.js            # Posts mod actions to Discord log channel
+│       └── warnings.js          # Warning storage
 ├── dashboard/
 │   ├── server.js                # Express server + Discord OAuth
 │   └── public/
 │       ├── index.html           # Dashboard UI
 │       └── login.html           # Login page
 └── data/
-    └── dashboard.log            # Local dashboard log file
+    └── dashboard.log            # Dashboard log file
 ```
 
 ---

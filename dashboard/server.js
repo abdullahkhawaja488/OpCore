@@ -127,7 +127,7 @@ app.post('/api/servers/:guildId', requireAuth, async (req, res) => {
 
         if (!data[guildId]) return res.status(404).json({ error: 'Guild not found' });
 
-        const allowed = ['WELCOME_CHANNEL', 'BYE_CHANNEL', 'MEMBER_COUNT_CHANNEL_ID', 'RULES_CHANNEL', 'DEFAULT_ROLE_ID', 'NOTIFY_CHANNEL'];
+        const allowed = ['WELCOME_CHANNEL', 'BYE_CHANNEL', 'MEMBER_COUNT_CHANNEL_ID', 'RULES_CHANNEL', 'DEFAULT_ROLE_ID', 'LOG_CHANNEL'];
         for (const key of allowed) {
             if (req.body[key] !== undefined) {
                 data[guildId][key] = req.body[key];
@@ -167,14 +167,6 @@ app.get('/api/logs/stream', requireAuth, (req, res) => {
     }, 1000);
 
     req.on('close', () => clearInterval(interval));
-});
-
-// ── API: Trigger YT check ─────────────────────────────────────────────────────
-app.post('/api/yt/check', requireAuth, (req, res) => {
-    console.log('[DASHBOARD] Manual YT check triggered');
-    const triggerPath = path.join(__dirname, '../data/yt_trigger');
-    fs.writeFileSync(triggerPath, Date.now().toString());
-    res.json({ ok: true, message: 'YT check triggered' });
 });
 
 // ── API: Audit log ────────────────────────────────────────────────────────────

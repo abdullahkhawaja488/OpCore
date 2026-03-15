@@ -3,9 +3,8 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const bots = [
-    { name: 'Main Bot',    file: path.join(__dirname, 'src/bot.js') },
-    { name: 'YT Notifier', file: path.join(__dirname, 'src/services/youtubeNotifier.js') },
-    { name: 'Dashboard',   file: path.join(__dirname, 'dashboard/server.js') },
+    { name: 'Main Bot',  file: path.join(__dirname, 'src/bot.js') },
+    { name: 'Dashboard', file: path.join(__dirname, 'dashboard/server.js') },
 ];
 function launch(bot) {
     console.log(`[LAUNCHER] Starting ${bot.name}...`);
