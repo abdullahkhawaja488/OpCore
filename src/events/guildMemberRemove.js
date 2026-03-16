@@ -33,9 +33,8 @@ async function handleMemberRemove(member) {
 
         const embed = new EmbedBuilder()
             .setColor(color)
-            .setAuthor({ name: member.user.username, iconURL: member.user.displayAvatarURL({ size: 64 }) })
+            .setAuthor({ iconURL: member.user.displayAvatarURL({ size: 64 }) })
             .setDescription(description)
-            .setFooter({ text: `Members: ${member.guild.memberCount}` })
             .setTimestamp();
 
         if (title) embed.setTitle(title
